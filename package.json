@@ -1,0 +1,61 @@
+{
+  "name": "mocklets",
+  "version": "0.1.0",
+  "description": "reusable standard mocks for Jest and Jasmine for popular libraries and frameworks",
+  "homepage": "https://github.com/codesplinta/mocklets",
+  "main": "dist/mocklets.cjs.js",
+  "browser": "dist/mocklets.umd.js",
+  "bin": ".bin/mocklets",
+  "files": [
+    "dist",
+    ".bin",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "jest",
+    "jasmine",
+    "testing",
+    "sinon",
+    "mocks",
+    "resuable"
+  ],
+  "scripts": {
+    "lint": "standard --fix",
+    "test": "echo \"test\"",
+    "build": "echo \"build\""
+  },
+  "author": {
+    "name": "Ifeora Okechukwu",
+    "url": "https://isocroft.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codesplinta/mocklets.git"
+  },
+  "bugs": "https://github.com/codesplinta/mocklets/issues",
+  "license": "Apache-2.0",
+  "standard": {
+    "globals": [
+      "global",
+      "jest"
+    ],
+    "ignore": [
+      "/.github",
+      "/tests"
+    ]
+  },
+  "directories": {
+    "test": "test"
+  },
+  "peerDependencies": {
+    "jest": "^26.6.3"
+  },
+  "devDependencies": {
+    "standard": "^16.0.4",
+    "jest": "^26.6.3"
+  },
+  "dependencies": {
+  }
+}

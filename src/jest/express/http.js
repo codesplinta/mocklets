@@ -75,7 +75,7 @@ export const http = {
       socket: {}
     }
 
-    /* @HINT: ensure mocked request is a sub class of event emitter */
+    /* @HINT: ensure mocked response is a sub class of event emitter */
     let emitter = Object.create(EventEmitter.prototype, { });
     EventEmitter.call(emitter);
 

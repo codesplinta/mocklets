@@ -1,10 +1,11 @@
 {
-  "version": "0.0.1",
+  "version": "independent",
+  "useWorkspaces": true,
   "npmClient": "npm",
   "command": {
     "publish": {
       "ignoreChanges": ["lerna.json", "*.md"],
-      "message": "chore(release): publish mocklets",
+      "message": "chore(release): publish all mocklets",
       "registry": "https://npm.pkg.github.com/package"
     },
     "bootstrap": {
@@ -12,5 +13,5 @@
       "npmClientArgs": ["--no-package-lock"]
     }
   },
-  "packages": ["src/*"]
+  "packages": ["packages/*"]
 }

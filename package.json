@@ -1,5 +1,5 @@
 {
-  "name": "mocklets/root",
+  "name": "@mocklets/root",
   "version": "0.1.0",
   "description": "Reusable standard mocks and fakes for popular libraries and frameworks (e.g. Jest, Cypress and Jasmine).",
   "homepage": "https://github.com/codesplinta/mocklets",
@@ -26,15 +26,14 @@
   ],
   "scripts": {
     "lint": "standard --fix",
-    "build": "lerna run build --ignore mockelets/jasmine",
+    "build": "lerna run build --ignore @mockelets/sinon",
     "watch": "lerna run watch --parallel",
     "bootstrap": "lerna bootstrap",
-    "prepublish": "lerna run build --ignore mockelets/jasmine",
-    "test": "echo \"test\"",
-    "build": "echo \"build\""
+    "prepublish": "lerna run build --ignore @mockelets/sinon",
+    "test": "echo \"test\""
   },
   "author": {
-    "name": "Ifeora Okechukwu",
+    "name": "Ifeora Okechukwu <isocroft@gmail.com>",
     "url": "https://isocroft.com/"
   },
   "repository": {
@@ -56,12 +55,10 @@
   "directories": {
     "test": "test"
   },
-  "peerDependencies": {
-    "jest": "^26.6.3"
-  },
   "devDependencies": {
     "standard": "^16.0.4",
     "jest": "^26.6.3",
+    "jasmine": "^4.5.0",
     "lerna": "^3.21.0",
     "rimraf": "^2.6.3",
     "prettier": "^1.16.4"

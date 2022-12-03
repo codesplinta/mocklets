@@ -1,5 +1,5 @@
-const os = require('os')
-const pino = function () {
+const $pino = function () {
+  const os = global && typeof require === "function" ? require('os') : { hostname: () => "" };
   const logger =  {
     info: jest.fn(function info (message = '') {
       return Object.assign(
@@ -8,6 +8,7 @@ const pino = function () {
           "time": Date.now(),
           "msg": message,
           "pid": process.pid,
+          "timestamp": false,
           "hostname": os.hostname()
         },
         this._ ? this._ : {}
@@ -24,8 +25,9 @@ const pino = function () {
   return logger
 }
 
-try {
-  jest.setMock('pino', pino)
-} catch (_) {
-  /* @HINT: ignore */
+jest.mock('pino', $pino);
+
+export {
+  $pino
 }
+

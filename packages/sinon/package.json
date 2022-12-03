@@ -1,3 +1,17 @@
 {
-
+    "name": "@mockelts/sinon",
+    "version": "0.1.0",
+    "license": "Apache-2.0",
+    "author": "Ifeora Okechukwu <isocroft@gmail.com>",
+    "homepage": "https://github.com/codesplinta/mockelets#readme",
+    "repository": "git@github.com:codesplinta/mockelets.git",
+    "main": "entry.js",
+    "scripts": {
+      "test": "echo \"test\""
+    },
+    "dependencies": { },
+    "peerDependencies": {
+        "sinon": "^15.0.0",
+        "quibble": "^0.6.15"
+    }
 }

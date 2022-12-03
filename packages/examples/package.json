@@ -1,3 +1,21 @@
 {
-
+    "name": "@mockelts/examples",
+    "version": "0.1.0",
+    "license": "Apache-2.0",
+    "private": true,
+    "author": "Ifeora Okechukwu <isocroft@gmail.com>",
+    "homepage": "https://github.com/codesplinta/mockelets#readme",
+    "repository": "git@github.com:codesplinta/mockelets.git",
+    "main": "lib",
+    "scripts": {
+      "test": "jest"
+    },
+    "dependencies": {
+      "@mockets/jest": "^0.1.0",
+      "@mockets/jasmine": "^0.1.0"
+    },
+    "peerDependencies": {
+      "react": "^16.8.6 || ^17.0.0",
+      "react-dom": "^16.8.6 || ^17.0.0"
+    }
 }

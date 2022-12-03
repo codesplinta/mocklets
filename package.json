@@ -1,11 +1,14 @@
 {
-  "name": "mocklets",
+  "name": "mocklets/root",
   "version": "0.1.0",
   "description": "Reusable standard mocks and fakes for popular libraries and frameworks (e.g. Jest, Cypress and Jasmine).",
   "homepage": "https://github.com/codesplinta/mocklets",
   "main": "dist/mocklets.cjs.js",
   "browser": "dist/mocklets.umd.js",
   "bin": ".bin/mocklets",
+  "workspaces": [
+    "packages/*"
+  ],
   "files": [
     "dist",
     ".bin",
@@ -23,6 +26,10 @@
   ],
   "scripts": {
     "lint": "standard --fix",
+    "build": "lerna run build --ignore mockelets/jasmine",
+    "watch": "lerna run watch --parallel",
+    "bootstrap": "lerna bootstrap",
+    "prepublish": "lerna run build --ignore mockelets/jasmine",
     "test": "echo \"test\"",
     "build": "echo \"build\""
   },
@@ -56,6 +63,5 @@
     "standard": "^16.0.4",
     "jest": "^26.6.3"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

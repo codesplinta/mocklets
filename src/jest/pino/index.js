@@ -1,4 +1,5 @@
 export const fakePinoLoggerPackageFactory = () => {
+
   const $pino = function () {
     const os = global && typeof require === "function" ? require('os') : { hostname: () => "" };
     const logger =  {
@@ -26,6 +27,6 @@ export const fakePinoLoggerPackageFactory = () => {
     return logger
   }
 
-  return  $pino;
-}
+  return () => $pino;
+};
 

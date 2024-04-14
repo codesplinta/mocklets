@@ -1,4 +1,4 @@
-export const fakeStorageFactory = () => (function () {
+export const fakeStorageInstanceFactory = () => (function () {
     let __keys = [];
     let __map = {};
 
@@ -52,6 +52,9 @@ export const fakeStorageFactory = () => (function () {
         }
       }
     });
+
+    storageFake[Symbol.toStringTag] = "Storage";
+    storageFake["constructor"] = 'function Storage() { [native code] }';
 
     return storageFake;
   }());

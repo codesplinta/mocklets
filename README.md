@@ -2,23 +2,17 @@
 
 # mocklets
 
-Reusable standard mocks, stubs and fakes for popular browser API, library and framework objects based on [**Jest**](https://jestjs.io/) and [**Sinon**](https://sinonjs.org/).
+Reusable standard mocks and fakes for popular browser APIscand Node.js framework/library objects for [**Jest**](https://jestjs.io/).
 
 ## Motivation
 
-Everyone knows how hard software testing setup can be. When it comes to the [testing pyramid](https://www.perfecto.io/blog/testing-pyramid), the most amount of work to be done is in creating fixtures (like mocks and fakes) and it can be quite daunting. The very popular testing frameworks for unit testing and e-to-e tests are good at providing the building blocks for creating mocks/stubs(spies)/fakes but how often do we have reuse the same building blocks to create the same exact mocks/stubs(spies)/fakes for different projects ? This is where **mocklets** come in. This project is a monorepo that provides usable and standard mocks/stubs/fakes for _Jest_ and _Sinon_ only.
+Everyone knows how hard software testing setup can be. When it comes to the [testing pyramid](https://www.perfecto.io/blog/testing-pyramid), the most amount of work to be done is in creating fixtures (like mocks and fakes) and it can be quite daunting. The very popular testing frameworks for unit testing and e-to-e tests are good at providing the building blocks for creating mocks/fakes but how often do we have reuse the same building blocks to create the same exact mocks/stubs(spies)/fakes for different projects ? This is where **mocklets** come in. This project is a monorepo that provides usable and standard mocks/stubs/fakes for _Jest_ only.
 
 ## Installation
 >Install using `npm`
 
 ```bash
-   npm install @mocklets/jest
-```
-
->Or install using `yarn`
-
-```bash
-   yarn add @mocklets/sinon
+   npm install mocklets/jest
 ```
 
 

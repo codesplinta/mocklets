@@ -2,7 +2,7 @@
 
 # mocklets
 
-Reusable standard mocks and fakes for popular browser APIscand Node.js framework/library objects for [**Jest**](https://jestjs.io/).
+Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for [**Jest**](https://jestjs.io/).
 
 ## Motivation
 
@@ -13,6 +13,12 @@ Everyone knows how hard software testing setup can be. When it comes to the [tes
 
 ```bash
    npm install mocklets/jest
+```
+
+Or install using `yarn`
+
+```bash
+   yarn add mocklets/jest
 ```
 
 

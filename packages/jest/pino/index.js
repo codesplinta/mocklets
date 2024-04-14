@@ -1,4 +1,4 @@
-export function fakePinoLoggerFactory () {
+export const fakePinoLoggerPackageFactory = () => {
   const $pino = function () {
     const os = global && typeof require === "function" ? require('os') : { hostname: () => "" };
     const logger =  {

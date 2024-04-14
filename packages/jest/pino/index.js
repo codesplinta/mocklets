@@ -29,7 +29,3 @@ export function fakePinoLoggerFactory () {
   return  $pino;
 }
 
-export function mockPackageImport () {
-  jest.mock('pino', fakePinoLoggerFactory());
-}
-

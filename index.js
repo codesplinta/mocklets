@@ -1,5 +1,5 @@
 /**
- * Validates  properties on the `window` obbject that can be overriden.
+ * Validates  properties on the `window` object that can be overriden.
  *
  * @param {String} property
  * @throws {Error}

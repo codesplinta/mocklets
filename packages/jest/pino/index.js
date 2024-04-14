@@ -1,33 +1,35 @@
-const $pino = function () {
-  const os = global && typeof require === "function" ? require('os') : { hostname: () => "" };
-  const logger =  {
-    info: jest.fn(function info (message = '') {
-      return Object.assign(
-        {
-          "level":30,
-          "time": Date.now(),
-          "msg": message,
-          "pid": process.pid,
-          "timestamp": false,
-          "hostname": os.hostname()
-        },
-        this._ ? this._ : {}
-      ) 
-    })
+export function fakePinoLoggerFactory () {
+  const $pino = function () {
+    const os = global && typeof require === "function" ? require('os') : { hostname: () => "" };
+    const logger =  {
+      info: jest.fn(function info (message = '') {
+        return Object.assign(
+          {
+            "level":30,
+            "time": Date.now(),
+            "msg": message,
+            "pid": process.pid,
+            "timestamp": false,
+            "hostname": os.hostname()
+          },
+          this._ ? this._ : {}
+        ) 
+      })
+    }
+  
+    logger.child = function (extraMessage) {
+      const $logger = { _: extraMessage }
+      $logger.info = logger.info.bind($logger)
+      return $logger
+    }
+  
+    return logger
   }
 
-  logger.child = function (extraMessage) {
-    const $logger = { _: extraMessage }
-    $logger.info = logger.info.bind($logger)
-    return $logger
-  }
-
-  return logger
+  return  $pino;
 }
 
-jest.mock('pino', $pino);
-
-export {
-  $pino
+export function mockPackageImport () {
+  jest.mock('pino', fakePinoLoggerFactory());
 }
 

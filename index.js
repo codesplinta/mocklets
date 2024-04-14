@@ -41,9 +41,9 @@ export const provisionFakeWebPageWindowObject = (property, fakeOrMock) => {
 		delete window[property]
 
 		Object.defineProperty(window, property, {
-			configurable: true,
-			writable: true,
-			value: fakeOrMock
+		configurable: true,
+		writable: true,
+		value: fakeOrMock
 		})
 	})
 
@@ -66,13 +66,14 @@ export const provisionFakeWebPageWindowObject = (property, fakeOrMock) => {
  */
 export const provisionFakeNodeJSObject = (packageOrModuleName, fakeOrMock, global = true) => {
   beforeEach(() => {
-    const packageOrModule = require(packageOrModuleName);
-
     if (typeof fakeOrMock === "function") {
       if (fakeOrMock.length === 0) {
         jest.mock(packageOrModuleName, fakeOrMock);
       }
     } else {
+      const packageOrModule = global && typeof require === "function"
+      	? require(packageOrModuleName)
+      	: { default: null };
       packageOrModule.default = jest.fn(
         () => fakeOrMock
       );

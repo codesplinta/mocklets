@@ -97,7 +97,7 @@ describe('{greetingMaker(..)} | Unit Test Suite', () => {
 
 ## License
 
-MIT License
+Apache License 2.0
 
 ## Contributing
 

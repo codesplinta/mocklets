@@ -3,7 +3,7 @@ export const fakeStorageInstanceFactory = () => (function () {
   let __map = {}
 
   const storageFake = new Proxy(
-    Object.freeze({
+    {
       setItem (key, value) {
         if (typeof key !== 'string') {
           return
@@ -26,7 +26,7 @@ export const fakeStorageInstanceFactory = () => (function () {
       },
       key (keyIndex) {
         if (typeof keyIndex !== 'number') {
-          return null
+          throw new TypeError("Failed to execute 'key' on 'Storage': 1 argument required, but only 0 present.")
         }
         return __keys[keyIndex] || null
       },
@@ -41,7 +41,7 @@ export const fakeStorageInstanceFactory = () => (function () {
         }
         return __map[key] || null
       }
-    }),
+    },
     {
       get: (target, property) => {
         if (typeof target[property] !== 'number') {
@@ -51,6 +51,16 @@ export const fakeStorageInstanceFactory = () => (function () {
             return __keys.length
           }
         }
+      },
+      set: (target, prop, value) => {
+        if (prop === Symbol.toStringTag || prop === 'constructor') {
+          target[prop] = value
+          return value
+        }
+
+        if (target[prop]) {
+          throw new Error(`${prop}: readonly`)
+        }
       }
     }
   )
@@ -58,5 +68,5 @@ export const fakeStorageInstanceFactory = () => (function () {
   storageFake[Symbol.toStringTag] = 'Storage'
   storageFake.constructor = 'function Storage() { [native code] }'
 
-  return storageFake
+  return Object.freeze(storageFake)
 }())

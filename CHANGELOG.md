@@ -1,3 +1,12 @@
+<a name="0.0.3"></a>
+# 0.0.3 (2022-04-16)
+
+### Feature Added
+- None
+
+### Bug Fixes
+- Fixed bug with `browserStorage` fake object.
+
 <a name="0.0.2"></a>
 # 0.0.2 (2022-04-16)
 

@@ -1,4 +1,4 @@
-[![Generic badge](https://img.shields.io/badge/Jest-Yes-lightgreen.svg)](https://shields.io/) ![@isocroft](https://img.shields.io/badge/@isocroft-CodeSplinta-blue) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![Generic badge](https://img.shields.io/badge/Jest-Yes-lightgreen.svg)](https://shields.io/) ![@isocroft](https://img.shields.io/badge/@isocroft-CodeSplinta-blue) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) [![Made in Nigeria](https://img.shields.io/badge/made%20in-nigeria-008751.svg?style=flat-square)](https://github.com/acekyd/made-in-nigeria)
 
 # mocklets
 
@@ -8,7 +8,9 @@ Reusable standard mocks and fakes for popular browser and Node.js APIs, framewor
 
 Everyone knows how hard software testing setup can be. When it comes to the [testing pyramid](https://www.perfecto.io/blog/testing-pyramid) or [testing polygon](https://example.com), the most amount of work to be done is in creating fixtures (like mocks and fakes) and it can be quite daunting.
 
-The very popular testing frameworks for unit testing and e-to-e tests are good at providing certain building blocks for creating mocks/fakes but how often do we have to rebuild/reconstruct the same building blocks to create the same exact [test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) (e.g. mocks/stubs(spies)/fakes) for different JavaScript software projects ? This is where **mocklets** come in.
+The very popular testing frameworks for unit testing and e-to-e tests are good at providing certain building blocks for creating mocks/fakes but how often do we have to rebuild/reconstruct the same building blocks to create the same exact [test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) (e.g. mocks/stubs(spies)/fakes) for different JavaScript software projects ?
+
+This is where **mocklets** come in.
 
 This project provides re-usable and standard mocks/stubs/fakes for _Jest_ only.
 

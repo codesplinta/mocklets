@@ -1,6 +1,6 @@
-const EventEmitter = require('events').EventEmitter;
-const url = require('url')
-const toPromise = (val) => (val instanceof Promise ? val : Promise.resolve(val))
+const EventEmitter = require('events').EventEmitter
+// const url = require('url')
+// const toPromise = (val) => (val instanceof Promise ? val : Promise.resolve(val))
 
 export const http = {
   makeNext: (callback) => {
@@ -35,39 +35,41 @@ export const http = {
     request.ips = [ip]
 
     /* @HINT: ensure mocked request is a sub class of event emitter */
-    let emitter = Object.create(EventEmitter.prototype, { });
-    EventEmitter.call(emitter);
+    const emitter = Object.create(EventEmitter.prototype, { })
+    EventEmitter.call(emitter)
 
-    request.method = method || 'GET';
-    request.url = url || path;
-    request.originalUrl = originalUrl || url;
-    request.path = path || (url ? url.parse(url).pathname : '');
+    request.method = method || 'GET'
+    request.url = url || path
+    request.originalUrl = originalUrl || url
+    request.path = path || (url ? url.parse(url).pathname : '')
 
-    Object.assign(emitter, request);
+    Object.assign(emitter, request)
 
     emitter.param = function (paramName, defaultValue) {
-        if (request.params.hasOwnProperty(paramName)) {
-            return request.params[paramName];
-        } else if (request.body.hasOwnProperty(paramName)) {
-            return request.body[paramName];
-        } else if (request.query.hasOwnProperty(paramName)) {
-            return request.query[paramName];
-        }
-        return defaultValue;
+      const hasProperty = ({}).hasOwnProperty
+
+      if (hasProperty.call(request.params, paramName)) {
+        return request.params[paramName]
+      } else if (hasProperty.call(request.body, paramName)) {
+        return request.body[paramName]
+      } else if (hasProperty.call(request.query, paramName)) {
+        return request.query[paramName]
+      }
+      return defaultValue
     }
 
     emitter.get = emitter.getHeader = emitter.header = function (name) {
-      name = name.toLowerCase();
+      name = name.toLowerCase()
       switch (name) {
         case 'referer':
         case 'referrer':
-          return _headers.referrer || _headers.referer;
+          return _headers.referrer || _headers.referer
         default:
-          return _headers[name];
+          return _headers[name]
       }
     }
 
-    return emitter;
+    return emitter
   },
   makeResponse: ({ headers = {} } = {}) => {
     const _headers = headers
@@ -76,16 +78,21 @@ export const http = {
     }
 
     /* @HINT: ensure mocked response is a sub class of event emitter */
-    let emitter = Object.create(EventEmitter.prototype, { });
-    EventEmitter.call(emitter);
+    const emitter = Object.create(EventEmitter.prototype, { })
+    EventEmitter.call(emitter)
 
     const chainableMethods = ['status']
     const nonChainableMethods = ['send', 'end', 'header', 'json']
 
     Object.assign(emitter, response)
 
-    chainableMethods.forEach((method) => emitter[method] = jest.fn().mockReturnValue(response))
-    nonChainableMethods.forEach((method) => emitter[method] = jest.fn(() => (...args) => method === 'header' ? _headers[args[0]] : true))
+    chainableMethods.forEach((method) => {
+      emitter[method] = jest.fn().mockReturnValue(response)
+    })
+
+    nonChainableMethods.forEach((method) => {
+      emitter[method] = jest.fn(() => (...args) => method === 'header' ? _headers[args[0]] : true)
+    })
 
     return emitter
   }

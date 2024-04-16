@@ -4,11 +4,15 @@
   "description": "Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for Jest",
   "homepage": "https://github.com/codesplinta/mocklets",
   "main": "dist/mocklets.cjs.js",
-  "browser": "dist/mocklets.umd.js",
+  "module": "dist/mocklets.es.js",
   "files": [
+    "examples",
     "dist",
+    ".npmignore",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "package-lock.json",
+    "README.md"
   ],
   "keywords": [
     "jest",
@@ -19,8 +23,10 @@
   ],
   "scripts": {
     "lint": "standard --fix",
-    "build": "lerna run build --ignore mockelets",
-    "test": "echo \"test\""
+    "test": "echo \"test\"",
+    "build:rollup": "rollup -c rollup.config.js",
+    "cleanup": "rimraf dist",
+    "build": "npm run cleanup && npm run build:rollup"
   },
   "author": {
     "name": "Ifeora Okechukwu <isocroft@gmail.com>",
@@ -35,22 +41,31 @@
   "standard": {
     "globals": [
       "global",
-      "jest"
+      "jest",
+      "beforeAll",
+      "afterAll",
+      "beforeEach",
+      "afterEach"
     ],
     "ignore": [
+      "/examples",
       "/.github",
-      "/test"
+      "/test",
+      "rollup.config.js"
     ]
   },
-  "directories": {
-    "test": "test"
-  },
   "devDependencies": {
+    "@babel/preset-env": "^7.14.1",
+    "@rollup/plugin-babel": "^5.3.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "@rollup/plugin-strip": "^3.0.4",
+    "@rollup/plugin-terser": "^0.4.4",
     "jest": "^26.6.3",
     "prettier": "^1.16.4",
-    "rimraf": "^2.6.3",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.47.0",
     "standard": "^16.0.4",
     "timekeeper": "2.3.1"
-  },
-  "dependencies": {}
+  }
 }

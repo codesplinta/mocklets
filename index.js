@@ -1,9 +1,11 @@
-import timekeeper from 'timekeeper';
+import { fakeReactJSTransitionGroupFactory } from './src/jest/react-transition-group'
+import { fakePinoLoggerPackageFactory } from './src/jest/pino'
+import { fakeWinstonLoggerPackageFactory } from './src/jest/winston'
+import { fakeNextJSRouterPackageFactory } from './src/jest/next/router'
+import { fakeIntersectionObserverFactory } from './src/jest/IntersectionObserver'
+import { fakeStorageInstanceFactory } from './src/jest/browserStorage'
 
-import { fakeReactJSTransitionGroupFactory } from "./src/jest/react-transition-group";
-import { fakePinoLoggerPackageFactory } from "./src/jest/pino";
-import { fakeNextJSRouterPackageFactory } from "./src/jest/next/router";
-import { fakeStorageInstanceFactory } from "./src/jest/browserStorage";
+const timekeeper = require('timekeeper')
 
 /**
  * Validates  properties on the `window` object that can be overriden.
@@ -13,22 +15,22 @@ import { fakeStorageInstanceFactory } from "./src/jest/browserStorage";
  *
  * @returns void
  */
-function assertReadonlyGlobalsNotMutable(property) {
-	const readOnlyGlobalObjects = [
-		'origin',
-		'history',
-		'clientInformation',
-		'caches',
-		'closed',
-		'crypto',
-		'fetch'
-	]
+function assertReadonlyGlobalsNotMutable (property) {
+  const readOnlyGlobalObjects = [
+    'origin',
+    'history',
+    'clientInformation',
+    'caches',
+    'closed',
+    'crypto',
+    'fetch'
+  ]
 
-	if (readOnlyGlobalObjects.includes(property)) {
-		throw new Error(
-			`Cannot override sensitive readonly global object: "${property}"`
-		)
-	}
+  if (readOnlyGlobalObjects.includes(property)) {
+    throw new Error(
+      `Cannot override sensitive readonly global (window) object: "${property}"`
+    )
+  }
 }
 
 /**
@@ -41,29 +43,29 @@ function assertReadonlyGlobalsNotMutable(property) {
  * @returns void
  */
 const provisionFakeWebPageWindowObject = (property, fakeOrMock) => {
-	const { [property]: originalProperty } = window
+  const { [property]: originalProperty } = window
 
-	beforeAll(() => {
-		assertReadonlyGlobalsNotMutable(property)
-		delete window[property]
+  beforeAll(() => {
+    assertReadonlyGlobalsNotMutable(property)
+    delete window[property]
 
-		Object.defineProperty(window, property, {
-		configurable: true,
-		writable: true,
-		value: fakeOrMock
-		})
-	})
+    Object.defineProperty(window, property, {
+      configurable: true,
+      writable: true,
+      value: fakeOrMock
+    })
+  })
 
-	afterAll(() => {
-		if (Boolean(originalProperty)) {
-			window[property] = originalProperty
-		}
-	})
+  afterAll(() => {
+    if (originalProperty) {
+      window[property] = originalProperty
+    }
+  })
 }
 
 /**
- * A helper utility for replacing global or exported object and APIs from 
- * Nodejs packages  with a fake implementation replica so as to make 
+ * A helper utility for replacing global or exported object and APIs from
+ * Nodejs packages  with a fake implementation replica so as to make
  * testing a lot easier.
  *
  * @param {String} property
@@ -72,126 +74,231 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock) => {
  * @returns void
  */
 const provisionFakeNodeJSObject = (packageOrModuleName, fakeOrMock) => {
-
   beforeEach(() => {
-    if (typeof fakeOrMock === "function") {
+    if (typeof fakeOrMock === 'function') {
       if (fakeOrMock.length === 0) {
-        jest.mock(packageOrModuleName, fakeOrMock);
+        jest.mock(packageOrModuleName, fakeOrMock)
       }
     } else {
-      const packageOrModule = global && typeof require === "function"
-      	? require(packageOrModuleName)
-      	: { default: null };
+      const packageOrModule = global && typeof require === 'function'
+        ? /* jest.requireActual(...) */ require(packageOrModuleName)
+        : { default: null }
       packageOrModule.default = jest.fn(
         () => fakeOrMock
-      );
+      )
     }
-  });
+  })
 
   afterEach(() => {
-    jest.resetModules();
-  });
+    jest.resetModules()
+  })
 }
 
 /**
- * 
- * 
- * @param {() => number} callback 
- * 
+ * A helper utility that enables the use of static mock dates within tests
+ *
+ * @param {() => number | Date} callback
+ * @param {1 | 0} resetAfterEach
+ *
  * @return void
  * @api public
  */
-export const provisionMockedDateForTests = (callback = () => 1487076708000) => {
-	/* @CHECK: https://stackoverflow.com/a/47781245 */
-	let dateSpy;
-	let dateNowSpy;
+export const provisionMockedDateForTests = (callback = () => Date.now(), resetAfterEach = 1) => {
+  /* @CHECK: https://stackoverflow.com/a/47781245 */
+  let dateSpy
+  let dateNowSpy
 
-	beforeAll(() => {
-	  jest
-		.useFakeTimers()
+  beforeAll(() => {
+    jest.useFakeTimers()
 
-	  // Lock Time
-	  dateSpy = jest
-  		.spyOn(!!window ? window : global, 'Date')
-  		  .mockImplementationOnce(() => new Date(callback()));
-	  dateNowSpy = jest
-	  	.spyOn(Date, 'now')
-		  .mockImplementation(callback);
-	});
+    // Lock Time
+    dateSpy = jest
+      .spyOn(typeof window !== 'undefined' ? window : global, 'Date')
+      .mockImplementationOnce(() => new Date(callback()))
+    dateNowSpy = jest
+      .spyOn(typeof window !== 'undefined' ? window.Date : global.Date, 'now')
+      .mockImplementation(callback)
+  })
 
-	afterAll(() => {
-	  jest.useRealTimers()
+  afterEach(() => {
+    if (resetAfterEach) {
+      dateSpy.mockRestore()
+      dateNowSpy.mockRestore()
 
-	  // Unlock Time
-	  dateSpy.mockRestore();
-	  dateNowSpy.mockRestore();
-	});
-	
+      // Lock Time
+      dateSpy = jest
+        .spyOn(typeof window !== 'undefined' ? window : global, 'Date')
+        .mockImplementationOnce(() => new Date(callback()))
+      dateNowSpy = jest
+        .spyOn(typeof window !== 'undefined' ? window.Date : global.Date, 'now')
+        .mockImplementation(callback)
+    }
+  })
+
+  afterAll(() => {
+    jest.useRealTimers()
+
+    // Unlock Time
+    dateSpy.mockRestore()
+    dateNowSpy.mockRestore()
+  })
 }
 
 /**
- * 
- * 
- * @param {Date} dateObject 
- * 
+ * A helper utility that enables the use of controllable fake dates within tests
+ *
+ * @param {Date} date
+ * @param {1 | 0} resetAfterEach
+ *
+ * @see https://stackoverflow.com/a/47781245
+ *
+ * @return Timekeeper
+ * @api public
+ */
+export const provisionFakeDateForTests = (date = new Date(), resetAfterEach = 1) => {
+  beforeAll(() => {
+    /* @HINT: Lock Time */
+    timekeeper.freeze(date)
+  })
+
+  afterEach(() => {
+    if (resetAfterEach) {
+      // Unlock and Lock again
+      timekeeper.reset()
+      timekeeper.freeze(date)
+    }
+  })
+
+  afterAll(() => {
+    // Unlock Time
+    timekeeper.reset()
+  })
+
+  return timekeeper
+}
+
+/**
+ * A helper utility that enables the use of fake browser API: `window.localStorage` within tests
+ *
+ * @param {1 | 0} clearAfterEach
+ *
  * @return void
  * @api public
  */
-export const provisionFakeDateForTests = (dateObject = new Date('2007-01-01')) => {
-	beforeAll(() => {
-	  // Lock Time
-	  timekeeper.freeze(dateObject);
-	});
-	
-	afterAll(() => {
-	  // Unlock Time
-	  timekeeper.reset();
-	});
-};
+export const provisionFakeBrowserLocalStorageForTests = (clearAfterEach = 1) => {
+  provisionFakeWebPageWindowObject(
+    'localStorage',
+    fakeStorageInstanceFactory()
+  )
+
+  afterEach(() => {
+    if (clearAfterEach) {
+      if (typeof window !== 'undefined') {
+        window.localStorage.clear()
+      }
+    }
+  })
+}
 
 /**
- * 
+ * A helper utility that enables the use of fake browser API: `window.sessionStorage` within tests
+ *
+ * @param {1 | 0} clearAfterEach
+ *
  * @return void
  * @api public
  */
-export const provisionFakeBrowserLocalStorageForTests = () => {
-	provisionFakeWebPageWindowObject('localStorage', fakeStorageInstanceFactory())
-};
+export const provisionFakeBrowserSessionStorageForTests = (clearAfterEach = 1) => {
+  provisionFakeWebPageWindowObject(
+    'sessionStorage',
+    fakeStorageInstanceFactory()
+  )
+
+  afterEach(() => {
+    if (clearAfterEach) {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.clear()
+      }
+    }
+  })
+}
 
 /**
- * 
+ * A helper utility that enables the use of fake browser API: `window.Intersection` within tests
+ *
+ * @param {1 | 0} resetAfterEach
+ *
  * @return void
  * @api public
  */
-export const provisionFakeBrowserSessionStorageForTests = () => {
-	provisionFakeWebPageWindowObject('sessionStorage', fakeStorageInstanceFactory())
-};
+export const provisionFakeBrowserIntersectionObserverForTests = (resetAfterEach = 1) => {
+  provisionFakeWebPageWindowObject(
+    'IntersectionObserver',
+    fakeIntersectionObserverFactory()
+  )
 
+  afterEach(() => {
+    if (resetAfterEach) {
+      if (typeof window !== 'undefined') {
+        window.IntersectionObserver.disconnect()
+      }
+    }
+  })
+}
 
 /**
- * 
+ * A helper utility that enables the use of mock NextJS router hook: `useRouter()` within tests
+ *
  * @return void
  * @api public
  */
 export const provisionMockedNextJSRouterForTests = () => {
-	provisionFakeNodeJSObject('next/router', fakeNextJSRouterPackageFactory())
-};
+  provisionFakeNodeJSObject(
+    'next/router',
+    fakeNextJSRouterPackageFactory()
+  )
+}
 
 /**
- * 
+ * A helper utility that enables the use of mock server-side logger: `pino` within tests
+ *
  * @return void
  * @api public
  */
 export const provisionMockedPinoLoggerForTests = () => {
-	provisionFakeNodeJSObject('pino', fakePinoLoggerPackageFactory())
-};
-
+  provisionFakeNodeJSObject(
+    'pino',
+    fakePinoLoggerPackageFactory()
+  )
+}
 
 /**
- * 
+ * A helper utility that enables the use of mock server-side logger: `winston` within tests
+ *
+ * @return void
+ * @api public
+ */
+export const provisionMockedWinstonLoggerForTests = () => {
+  provisionFakeNodeJSObject(
+    'winston',
+    fakeWinstonLoggerPackageFactory()
+  )
+}
+
+/**
+ * A helper utility that enables the use of mock CSS transition for ReactJS: `react-transition-group` within tests
+ *
  * @return void
  * @api public
  */
 export const provisionMockedReactTransitionGroupForTests = () => {
-	provisionFakeNodeJSObject('reatc-transition-group', fakeReactJSTransitionGroupFactory())
-};
+  provisionFakeNodeJSObject(
+    'react-transition-group',
+    fakeReactJSTransitionGroupFactory()
+  )
+}
+
+export const $EXECUTION = {
+  RESET_AFTER_EACH_TEST_CASE: 1,
+  IGNORE_RESET_AFTER_EACH_TEST_CASE: 0
+}

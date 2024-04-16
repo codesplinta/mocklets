@@ -5,6 +5,7 @@
   "homepage": "https://github.com/codesplinta/mocklets",
   "main": "dist/mocklets.cjs.js",
   "module": "dist/mocklets.es.js",
+  "typings": "./types/index.d.ts",
   "files": [
     "examples",
     "dist",

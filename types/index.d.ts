@@ -1,4 +1,4 @@
-// Type definitions for mocklets v0.0.1
+// Type definitions for mocklets v0.0.4
 // Project: https://github.com/codesplinta/mocklets
 
 interface Timekeeper {
@@ -83,8 +83,13 @@ declare module 'mocklets' {
  *
  * @see https://stackoverflow.com/a/47781245
  * 
- * @return Timekeeper
+ * @return Timekeeper | null
  * @api public
  */
-  export function provisionFakeDateForTests(date: Date, resetAfterEach?: 1 | 0): Timekeeper;
+  export function provisionFakeDateForTests(date: Date, resetAfterEach?: 1 | 0): Timekeeper | null;
+
+  export const enum $EXECUTION {
+    RESET_AFTER_EACH_TEST_CASE = 1,
+    IGNORE_RESET_AFTER_EACH_TEST_CASE = 0
+  }
 }

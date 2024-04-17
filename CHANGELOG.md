@@ -1,3 +1,12 @@
+<a name="0.0.4"></a>
+# 0.0.4 (2022-04-17)
+
+### Feature Added
+- None
+
+### Bug Fixes
+- Fixed error `Cannot find module 'timekeeper' from 'node_modules/mocklets/dist/mocklets.cjs.js'`.
+
 <a name="0.0.3"></a>
 # 0.0.3 (2022-04-16)
 

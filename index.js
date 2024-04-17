@@ -5,8 +5,6 @@ import { fakeNextJSRouterPackageFactory } from './src/jest/next/router'
 import { fakeIntersectionObserverFactory } from './src/jest/IntersectionObserver'
 import { fakeStorageInstanceFactory } from './src/jest/browserStorage'
 
-const timekeeper = require('timekeeper')
-
 /**
  * Validates  properties on the `window` object that can be overriden.
  *
@@ -156,8 +154,11 @@ export const provisionMockedDateForTests = (callback = () => Date.now(), resetAf
  * @api public
  */
 export const provisionFakeDateForTests = (date = new Date(), resetAfterEach = 1) => {
+  let timekeeper = null
+
   beforeAll(() => {
     /* @HINT: Lock Time */
+    timekeeper = require('timekeeper')
     timekeeper.freeze(date)
   })
 
@@ -172,6 +173,7 @@ export const provisionFakeDateForTests = (date = new Date(), resetAfterEach = 1)
   afterAll(() => {
     // Unlock Time
     timekeeper.reset()
+    timekeeper = null
   })
 
   return timekeeper

@@ -1,6 +1,6 @@
 {
   "name": "mocklets",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for Jest",
   "homepage": "https://github.com/codesplinta/mocklets",
   "main": "dist/mocklets.cjs.js",
@@ -68,6 +68,9 @@
     "rimraf": "^3.0.2",
     "rollup": "^2.47.0",
     "standard": "^16.0.4",
+    "timekeeper": "2.3.1"
+  },
+  "dependencies": {
     "timekeeper": "2.3.1"
   }
 }

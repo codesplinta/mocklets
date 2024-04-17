@@ -9,10 +9,12 @@ const pkg = JSON.parse(
   fs.readFileSync('./package.json', { encoding: 'utf-8' })
 )
 const extensions = ['.js']
+const externalGlobals = Object.keys(pkg.dependencies)
 const devHelpersToRemove = process.env.PRODUCTION ? ['console.log', 'console.info', 'assert.*', 'debug', 'alert'] : []
 
 export default {
   input: 'index.js',
+  external: externalGlobals,
   plugins: [
     nodeResolve({
 	  extensions

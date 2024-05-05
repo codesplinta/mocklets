@@ -1,5 +1,5 @@
 const EventEmitter = require('events').EventEmitter
-// const url = require('url')
+const urlParser = require('url')
 // const toPromise = (val) => (val instanceof Promise ? val : Promise.resolve(val))
 
 export const http = {
@@ -41,7 +41,8 @@ export const http = {
     request.method = method || 'GET'
     request.url = url || path
     request.originalUrl = originalUrl || url
-    request.path = path || (url ? url.parse(url).pathname : '')
+    /* eslint-disable-next-line */
+    request.path = path || (typeof urlParser['parse'] === "function" ? urlParser.parse(url).pathname : (new URL()).pathname)
 
     Object.assign(emitter, request)
 

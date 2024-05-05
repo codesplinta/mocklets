@@ -1,6 +1,6 @@
 {
   "name": "mocklets",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for Jest",
   "homepage": "https://github.com/codesplinta/mocklets",
   "main": "dist/mocklets.cjs.js",

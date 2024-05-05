@@ -2,6 +2,7 @@ import { fakeReactJSTransitionGroupFactory } from './src/jest/react-transition-g
 import { fakePinoLoggerPackageFactory } from './src/jest/pino'
 import { fakeWinstonLoggerPackageFactory } from './src/jest/winston'
 import { fakeNextJSRouterPackageFactory } from './src/jest/next/router'
+import { fakeAdonisJSCachePackageFactory } from './src/jest/adonisjs-cache'
 import { fakeIntersectionObserverFactory } from './src/jest/IntersectionObserver'
 import { fakeStorageInstanceFactory } from './src/jest/browserStorage'
 
@@ -233,19 +234,25 @@ export const provisionFakeBrowserSessionStorageForTests = (clearAfterEach = 1) =
  * @return void
  * @api public
  */
-export const provisionFakeBrowserIntersectionObserverForTests = (resetAfterEach = 1) => {
+export const provisionFakeBrowserIntersectionObserverForTests = () => {
   provisionFakeWebPageWindowObject(
     'IntersectionObserver',
     fakeIntersectionObserverFactory()
   )
+}
 
-  afterEach(() => {
-    if (resetAfterEach) {
-      if (typeof window !== 'undefined') {
-        window.IntersectionObserver.disconnect()
-      }
-    }
-  })
+/**
+ * A helper utility that enables the use of mock AdonisJS v4 cache package : `require('adonis-cache')` within tests
+ *
+ * @return void
+ * @api public
+ */
+export const provisionMockedAdonisJSv4CacheForTests = () => {
+  const Cache = fakeAdonisJSCachePackageFactory()
+  provisionFakeNodeJSObject(
+    'adonis-cache',
+    new Cache()
+  )
 }
 
 /**

@@ -1,4 +1,4 @@
-// Type definitions for mocklets v0.0.4
+// Type definitions for mocklets v0.0.5
 // Project: https://github.com/codesplinta/mocklets
 
 interface Timekeeper {
@@ -54,6 +54,13 @@ declare module 'mocklets' {
  * @api public
  */
   export function provisionMockedNextJSRouterForTests(): void;
+/**
+ * A helper utility that enables the use of mock AdonisJS v4 cache package : `require('adonis-cache')` within tests
+ *
+ * @return void
+ * @api public
+ */
+  export function provisionMockedAdonisJSv4CacheForTests(): void;
 /**
  * A helper utility that enables the use of mock server-side logger: `winston` within tests
  *

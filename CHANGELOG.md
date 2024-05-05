@@ -1,3 +1,16 @@
+<a name="0.0.5"></a>
+# 0.0.5 (2022-05-05)
+
+### Feature Added
+- Added `provisionMockedAdonisJSv4CacheForTests()` helper function
+
+### WIP (Work-in-progress)
+- Adding `Cloudinary.uploader` fake **Cloudinary**
+- Adding `(req, res, next)` fakes for **ExpressJS**
+
+### Bug Fixes
+- Fixed issue (error) with `provisionFakeBrowserIntersectionObserverForTests()` helper function: **disconnect() is not defined**
+
 <a name="0.0.4"></a>
 # 0.0.4 (2022-04-17)
 

@@ -6,6 +6,8 @@ export const fakeWinstonLoggerPackageFactory = () => {
   }
 
   const $winston = {
+    __esModule: true,
+    ...jest.requireActual('winston'),
     format: {
       colorize: jest.fn(),
       combine: jest.fn(),

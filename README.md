@@ -27,10 +27,17 @@ Or install using `yarn`
    yarn add mocklets
 ```
 
+## Support
+
+>**mockelts** can ONLY run well on Node.js v10.0.0 to Node.js v19.3.x as well as Jest v25.5.1 to Jest 29.5.x
+
 ## Getting Started
 
-You can use mocklets inside your jest test suite files simply by importing into these files and calling the functions within the `describe()` callback before any of `test()` routine calls.
+You can use mocklets inside your jest test suite files simply by importing into these files and calling the functions outside or within the `describe()` callback. You can also make addditional calls within any of `test()` callbacks.
 
+It is important to note that when 
+
+## Some Basic Example (on the browser)
 >src/greetingMaker/index.js
 ```js
 
@@ -57,7 +64,7 @@ export default function greetingMaker (subjectFullName = 'John Doe', subjectTitl
 }
 ```
 
->src/greetingMaker/tests/greetingMaker.spec.js
+>src/greetingMaker/\__tests\__/greetingMaker.spec.js
 ```js
 import {
   provisionFakeBrowserSessionStorageForTests,
@@ -96,6 +103,236 @@ describe('{greetingMaker(..)} | Unit Test Suite', () => {
   });
 });
 ```
+
+## More Basic Examples (on the server)
+
+Below are some more ways you can use `mockelts`.
+
+>src/controller/downloads/getFile.js
+```js
+module.exports = function (req, res, next) {
+  const options = {
+    root: path.join(__dirname, 'public'),
+    dotfiles: 'deny',
+    headers: {
+      'x-timestamp': Date.now(),
+      'x-sent': true
+    }
+  }
+
+  const fileName = req.params.name
+
+  res.sendFile(`${fileName}.txt`, options, function (error) {
+    if (error) {
+      next(error)
+    } else {
+      console.log('Sent:', fileName)
+    }
+  })
+}
+```
+
+>src/index.js
+```js
+'use strict';
+
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const getFile = require('./controllers/downloads/getFile.js')
+
+const app = express();
+
+app.use(bodyParser.json());
+
+app.get('/fetch/file/:name', getFile);
+
+app.listen(8080, function() {
+  console.log('Server started');
+});
+```
+
+>src/controller/downloads/\__tests\__/getFile.spec.js
+```js
+import  {
+  provisionFakeDateForTests,
+  provisionFixturesForTests_withAddons,
+  provisionMockedNodeJSFileSystemForTests,
+  provisionMockedJSConsoleLoggingForTests,
+  $EXECUTION
+} from 'mocklets'
+
+/* @HINT: 
+ *
+ * Mocking/Faking the filesystem (in memory)
+ * 
+ * Always remember, for all imported packages,
+ * {mocklets} depends on manual hoisting!!
+ */
+provisionMockedNodeJSFileSystemForTests((mock, path, require) => {
+  const expressJSPublicFolderPath = require.resolve(
+    path.join(__dirname, '../../../../public')
+  )
+
+  mock({
+    [expressJSPublicFolderPath]: mock.directory({
+      mode: 0755,
+      items: {
+        'open-scape.txt': mock.file({
+          content: 'Hello World!',
+          ctime: new Date(1411609054470), //Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
+          mtime: new Date(1411609054470) //Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
+        }),
+        '.DS_store': { mode: parseInt('444', 8), content: '' },
+        'pixies.png': Buffer.from([8, 6, 7, 5, 3, 0, 9])
+      }
+    })
+  })
+});
+
+/* @HINT:
+ *
+ *
+ * Remember that we are importing 'getFile' ES module
+ * here because {mocklets} uses manual hoisting to
+ * set mocks up as opposed to automatic mocking used
+ * by Jest + Babel
+ * 
+ * Since, the 'getFile' module makes use of `res.sendFile()`,
+ * I have to import it after mocking the filesystem (above)
+ */
+import getFile from '../../getFile';
+
+/* @HINT:
+ *
+ * 
+ * Always provision `console.log/warn/error/...` after loading
+ * 
+ * The 'Delayed Logging' strategy will still push your logs to the console.
+ * 
+ * You'll still be able to see them all in time
+ * however, only after the test case has run.
+ * 
+ * We'll be mocking/faking only `console.log()`
+ */
+provisionMockedJSConsoleLoggingForTests(
+  $EXECUTION.DELAYED_LOGGING,
+  [ 'log' ]
+);
+
+/* @HINT:
+ *
+ * 
+ * The date mock/fake here is frozen in time for the tests
+ */
+provisionFakeDateForTests(
+  new Date(2024, 1, 4, 11, 24, 10),
+  $EXECUTION.IGNORE_RESET_AFTER_EACH_TEST_CASE
+);
+
+const { getTestFixtures } = provisionFixturesForTests_withAddons()
+
+
+describe('...', () => {
+  test(
+    '... | [expressHttpRequest, expressHttpResponse, expressNext]',
+    () => {
+      /* @NOTE: Arrange */
+      const req  = getTestFixture('expressHttpRequest', {
+        params: {
+          /* @HINT:
+           *
+           * 
+           * Misspell the name of the file as http request params
+           * (on purpose)
+           * */
+          name: 'open-spacey'
+        }
+      })
+      const res = getTestFixture('expressHttpResponse', {
+        locals: {
+          id: '273993'
+        }
+      })
+      const nextErrorSpy = jest.fn()
+      const next = getTestFixture('expressNext',  nextErrorSpy)
+
+      /* @NOTE: Act */
+      getFile(req, res, next)
+
+
+      /* @NOTE: Assert */
+      expect(req.sendFile).toHaveBeenCalled();
+      expect(req.sendFile).toHaveBeenCalledWith(
+        'open-spacey.txt',
+        expect.objectContaining({
+          dotfiles: 'deny',
+          headers: {
+            'x-timestamp': 1707042250000,
+            'x-sent': true
+          }
+        }),
+        expect.any(Function)
+      )
+
+      expect(console.log).not.toHaveBeenCalled();
+
+      expect(nextErrorSpy).toHaveBeenCalled();
+      expect(next).toHaveBeenCalled();
+      expect(next).toHaveBeenCalledWith(expect.any(Error))
+  })
+
+  test(
+    '... | [expressHttpRequest, expressHttpResponse, expressNext]',
+    () => {
+      /* @NOTE: Arrange */
+      const req  = getTestFixture('expressHttpRequest', {
+        params: {
+          name: 'open-scape'
+        }
+      })
+      const res = getTestFixture('expressHttpResponse', {
+        locals: {
+          id: '273993'
+        }
+      })
+      const nextErrorSpy = jest.fn()
+      const next = getTestFixture('expressNext',  nextErrorSpy)
+
+
+      /* @NOTE: Act */
+      getFile(req, res, next)
+
+
+      /* @NOTE: Assert */
+      expect(req.sendFile).toHaveBeenCalled();
+      expect(req.sendFile).toHaveBeenCalledWith(
+        'open-scape.txt',
+        expect.objectContaining({
+          dotfiles: 'deny',
+          headers: {
+            'x-timestamp': 1707042250000,
+            'x-sent': true
+          }
+        }),
+        expect.any(Function)
+      )
+
+      expect(console.log).toHaveBeenCalled();
+      expect(console.log).toHaveBeenCalledWith('Sent:', 'open-scape')
+
+      expect(nextErrorSpy).not.toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+  })
+})
+```
+
+## Usage
+
+It's important to not that `mockelets` depends heavily on **manual hoisting** for it to work. Usually, Jest and Babel work together to automatocally hoist mocks on the test file. However, `mocklets` takes a different approach using
+`jest.doMock()` instead of `jest.mock()` to avoidd automatic hoisting at all costs.
+
+...
 
 ## License
 

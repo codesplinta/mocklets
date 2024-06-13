@@ -1,6 +1,6 @@
 {
   "name": "mocklets",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for Jest",
   "homepage": "https://github.com/codesplinta/mocklets",
   "main": "dist/mocklets.cjs.js",
@@ -30,6 +30,9 @@
     "cleanup": "rimraf dist",
     "build": "npm run cleanup && npm run build:rollup"
   },
+  "engines": {
+    "node": ">=8.0.0 <19.0.0"
+  },
   "author": {
     "name": "Ifeora Okechukwu <isocroft@gmail.com>",
     "url": "https://isocroft.com/"
@@ -44,6 +47,7 @@
     "globals": [
       "global",
       "jest",
+      "process",
       "beforeAll",
       "afterAll",
       "beforeEach",
@@ -63,7 +67,9 @@
     "@rollup/plugin-node-resolve": "^13.0.0",
     "@rollup/plugin-strip": "^3.0.4",
     "@rollup/plugin-terser": "^0.4.4",
+    "@types/mock-fs": "4.13.4",
     "jest": "^26.6.3",
+    "mock-fs": "5.2.0",
     "prettier": "^1.16.4",
     "rimraf": "^3.0.2",
     "rollup": "^2.47.0",
@@ -71,6 +77,8 @@
     "timekeeper": "2.3.1"
   },
   "dependencies": {
+    "@types/mock-fs": "4.13.4",
+    "mock-fs": "5.2.0",
     "timekeeper": "2.3.1"
   }
 }

@@ -51,12 +51,21 @@ export const fakeIntersectionObserverFactory = () => (function () {
     return newRect
   }
 
-  const isInViewPort = (target, viewPort, options) => {
-    const rect = target.getBoundingClientRect()
+  const isInViewPort = (entry, viewPort, options) => {
+    let thresholds = [0]
+    const rect = entry.target.getBoundingClientRect()
     const viewPortRect = expandViewPortRectByRootMargin(
       viewPort.getBoundingClientRect(),
       options.rootMargin
     )
+
+    entry.boundingClientRect = rect
+    entry.rootBounds = viewPortRect
+
+    if ('threshold' in options) {
+      thresholds = options.threshold
+      console.log(thresholds)
+    }
 
     return (
       rect.left >= viewPortRect.x &&
@@ -71,7 +80,11 @@ export const fakeIntersectionObserverFactory = () => (function () {
   class IntersectionObserver {
     constructor (callback, options) {
       if (typeof callback !== 'function') {
-        throw new Error('callback must be a function')
+        throw new TypeError(
+          typeof callback === 'undefined'
+            ? "Failed to construct 'IntersectionObserver': 1 argument required, but only 0 present."
+            : "Failed to construct 'IntersectionObserver': parameter 1 is not of type 'Function'."
+        )
       }
 
       if (
@@ -82,6 +95,12 @@ export const fakeIntersectionObserverFactory = () => (function () {
         throw new Error('root must be a Document or Element')
       }
 
+      this.thresholds = options.threshold || options.thresholds || [0]
+      this.delay = 0
+      this.trackVisibility = false
+      this.root = options.root || null
+      this.rootMargin = options.rootMargin || '0px 0px 0px 0px'
+
       const viewPort = options.root === null || options.root.nodeType === 9
         ? window.document.documentElement
         : options.root
@@ -91,21 +110,74 @@ export const fakeIntersectionObserverFactory = () => (function () {
       viewPort.addEventListener('scroll', () => {
         this.entries.forEach((entry) => {
           entry.isIntersecting = isInViewPort(
-            entry.target,
+            entry,
             viewPort,
             options
           )
+
+          if (entry.isIntersecting) {
+            if (entry.time === 0) {
+              entry.time = (new Date()).getTime()
+            }
+            entry.intersectionRatio = 1.0
+          } else {
+            entry.time = 0
+            entry.intersectionRatio = 0.0
+            entry.intersectionRect = {
+              x: 0,
+              y: 0,
+              top: 0,
+              left: 0,
+              bottom: 0,
+              right: 0,
+              width: 0,
+              height: 0
+            }
+          }
         })
-        callback(this.entries, this)
+        callback(
+          this.entries.slice(0).map(
+            (entry) => Object.freeze(entry)
+          ),
+          this
+        )
       }, false)
     }
 
     observe (target) {
-      this.entries.push({ isIntersecting: false, target })
+      this.entries.push({
+        isIntersecting: false,
+        target,
+        time: 0,
+        rootBounds: {
+          x: 0,
+          y: 0,
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+          width: 0,
+          height: 0
+        },
+        intersectionRatio: 0.0,
+        intersectionRect: {
+          x: 0,
+          y: 0,
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+          width: 0,
+          height: 0
+        },
+        boundingClientRect: target.getBoundingClientRect()
+      })
     }
 
     unobserve (target) {
-      this.entries = this.entries.filter((entry) => entry.target !== target)
+      this.entries = this.entries.filter(
+        (entry) => entry.target !== target
+      )
     }
 
     disconnect () {

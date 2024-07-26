@@ -638,7 +638,7 @@ describe('Test article page for my blog', () => {
 ```
 
 ## Setting up for Jest
-To be able to use mocklets with the most ease and clarity, it is advised the you set up the (Jest configuration for `setupFilesAfterEnv`](https://jest-archive-august-2023.netlify.app/docs/26.x/configuration/#setupfilesafterenv-array).
+To be able to use mocklets with the most ease and clarity, it is advised the you set up the [Jest configuration for `setupFilesAfterEnv`](https://jest-archive-august-2023.netlify.app/docs/26.x/configuration/#setupfilesafterenv-array).
 
 **mockelts** exposes a jest setup file inside an _.export_ folder.
 

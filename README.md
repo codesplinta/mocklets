@@ -42,7 +42,7 @@ It is important to note that when [Kl](https://tigeroakes.com/posts/jest-mock-an
 ```js
 
 export default function greetingMaker (subjectFullName = 'John Doe', subjectTitle = 'Mr.') {
-   const format = window.sessionStorage.getItem('greeting:format');
+   const format = window.localStorage.getItem('greeting:format');
    const today = new Date();
    const hourOfToDay = today.getHours();
 
@@ -75,16 +75,22 @@ import {
 import greetingMaker from '../';
 
 describe('{greetingMaker(..)} | Unit Test Suite', () => {
-
+  /* @HINT
+   * 
+   * mock/fake for `new Date()`
+   */
   const timekeeper = provisionFakeDateForTests(
     new Date(2024, 0, 2, 12, 34, 55),
     $EXECUTION.IGNORE_RESET_AFTER_EACH_TEST_CASE
   );
 
-  provisionFakeBrowserSessionStorageForTests()
+  /* @HINT
+   *
+   * mock/fake for `winodw.localStorage`
+   */
+  provisionFakeBrowserLocalStorageForTests()
 
   test('it should return the correct greeting text given no valid format', () => {
-
     expect(greetingMaker('Diana Obiora', 'Miss.')).toBe(
       'Good afternoon, Miss. Diana Obiora'
     )
@@ -93,7 +99,7 @@ describe('{greetingMaker(..)} | Unit Test Suite', () => {
   test('it should return the correct greeting text given a valid format', () => {
 
     timekeeper.travel(new Date(2024, 1, 2, 10, 22, 27))
-    window.sessionStorage.setItem('greeting:format', 'old-fashioned')
+    window.localStorage.setItem('greeting:format', 'old-fashioned')
 
     expect(greetingMaker('Samuel Obiora')).toBe(
       'Good day, Mr. Samuel Obiora'
@@ -204,37 +210,42 @@ provisionMockedNodeJSFileSystemForTests((mock, path, require) => {
  */
 import getFile from '../../getFile';
 
-/* @HINT:
- *
- * 
- * Always provision `console.log/warn/error/...` after loading
- * 
- * The 'Delayed Logging' strategy will still push your logs to the console.
- * 
- * You'll still be able to see them all in time
- * however, only after the test case has run.
- * 
- * We'll be mocking/faking only `console.log()`
- */
-provisionMockedJSConsoleLoggingForTests(
-  $EXECUTION.DELAYED_LOGGING,
-  [ 'log' ]
-);
-
-/* @HINT:
- *
- * 
- * The date mock/fake here is frozen in time for the tests
- */
-provisionFakeDateForTests(
-  new Date(2024, 1, 4, 11, 24, 10),
-  $EXECUTION.IGNORE_RESET_AFTER_EACH_TEST_CASE
-);
-
-const { getTestFixtures } = provisionFixturesForTests_withAddons()
 
 
 describe('Testing `getFile()` ExpressJS app controller action', () => {
+ /* @HINT
+  *
+  * ExpressJS request, response and next fixtures/fakes will be extracted
+  * from here ( i.e. `getTextFixtures(...)` ).
+  */
+  const { getTestFixtures } = provisionFixturesForTests_withAddons()
+ /* @HINT:
+  *
+  * 
+  * Always provision `console.log/warn/error/...` after loading
+  * 
+  * The 'Delayed Logging' strategy will still push your logs to the console.
+  * 
+  * You'll still be able to see them all in time
+  * however, only after the test case has run.
+  * 
+  * Here, we'll be mocking/faking only `console.log()`
+  */
+  provisionMockedJSConsoleLoggingForTests(
+    $EXECUTION.DELAYED_LOGGING,
+    [ 'log' ]
+  );
+
+ /* @HINT:
+  *
+  * 
+  * The `new Date()` mock/fake here is frozen in time for the tests
+  */
+  provisionFakeDateForTests(
+    new Date(2024, 1, 4, 11, 24, 10),
+    $EXECUTION.IGNORE_RESET_AFTER_EACH_TEST_CASE
+  );
+
   test(
     "should send error as http response to client if file doesn't exist | [expressHttpRequest, expressHttpResponse, expressNext]",
     () => {
@@ -246,7 +257,7 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
            * 
            * Misspell the name of the file as http request params
            * (on purpose)
-           * */
+           */
           name: 'open-spacey'
         }
       })
@@ -422,6 +433,10 @@ import {
 } from '../../utils'
 
 describe('Test getUserFromStorage function', () => {
+  /* @HINT
+   *
+   * mock/fake for `window.sessionStorage`
+   */
   provisionFakeBrowserSessionStorageForTests()
 
   it('should return the user object', () => {
@@ -542,7 +557,7 @@ import MyArticleComponentUsingNextRouter from '../../pages/blog/article/[article
 import { dummyArticleId } from '../__fixtures__/forArticles';
 
 
-describe('Test article page logic', () => {
+describe('Test article page for my blog', () => {
 
   const { 
     $setSpyOn_useRouter_withReturnValueOnce
@@ -555,7 +570,10 @@ describe('Test article page logic', () => {
 
   $setEnv_forThisTestSuite('NEXT_PUBLIC_API_URL', 'http://localhost:3000/');
 
+
+
   it('should navigate to edit-article page', async () => {
+    /* @NOTE: Arrange */
     const { push }: NextRouter = $setSpyOn_useRouter_withReturnValueOnce(
       {
         query: {
@@ -565,14 +583,18 @@ describe('Test article page logic', () => {
       router
     );
 
+    /* @NOTE: Arrange */
     const { getByRole } = render(
       <MyArticleComponentUsingNextRouter />
     )
     
+    /* @NOTE: Act */
+
     /* @HINT: Use ARIA attributes and constants so test code isn't tightly coupled to application code */
     /* @NOTE: Imports; `asButton` = 'button' and `articlePage_editButton` = 'edit' */
     fireEvent.click(getByRole(asButton, { name: articlePage_editButtonName }));
 
+    /* @NOTE: Assert */
     await waitFor(
       () => expect(
         push
@@ -583,6 +605,7 @@ describe('Test article page logic', () => {
   });
 
   it('should navigate back to article page', async () => {
+    /* @NOTE: Arrange */
     const { back }: NextRouter = $setSpyOn_useRouter_withReturnValueOnce(
       {
         query: {
@@ -593,14 +616,18 @@ describe('Test article page logic', () => {
       router
     );
 
+    /* @NOTE: Arrange */
     const { getByRole } = render(
       <MyArticleComponentUsingNextRouter />
     )
     
+    /* @NOTE: Act */
+
     /* @HINT: Use ARIA attributes and constants so test code isn't tightly coupled to application code */
     /* @NOTE: Imports; `asButton` = 'button' and `articlePage_editButton` = 'edit' */
     fireEvent.click(getByRole(asButton, { name: articlePage_editButtonName }));
 
+    /* @NOTE: Assert */
     await waitFor(
       () => expect(
         back

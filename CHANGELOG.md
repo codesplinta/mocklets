@@ -10,10 +10,9 @@
 - Added `provisionMockedJSConsoleLoggingForTests()` helper function
 - Added `provisionMockedNodeJSFileSystemForTests()` helper function
 - Added `provisionFakeBrowserMatchMediaForTests()` helper function
-- Added `provisionMockedMaterialUIKitForTests()` helper function
 - Added `provisionMockedReacti18NextForTests()` helper function
 - Added `provisionFakeBrowserURILocationForTests_withAddons()` helper function
-- Added `` helper function
+- Added `provisionFakeBrowserDialogForTests()` helper function
 - Added `` helper function
 
 ### WIP (Work-in-progress)

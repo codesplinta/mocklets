@@ -213,7 +213,9 @@ module.exports = {
       return requestContentType.search(
         new RegExp(
           indexOfWildCard === 0
+            /* eslint-disable-next-line */
             ? `^|${type.replace('*', '').replace('/', '\/')}`
+            /* eslint-disable-next-line */
             : `${type.replace('*', '').replace('/', '\/')}|$`
           ,
           'ig'
@@ -372,18 +374,20 @@ module.exports = {
     })
 
     nonChainableMethods.forEach((method) => {
-      emitter[method] = jest.fn(() => (...args) => {
-        let result
+      emitter[method] = jest.fn(() => {
+        return (...args) => {
+          let result = null
 
-        result = method === 'header'
-          ? this.get([args[0]])
-          : undefined
+          result = method === 'header'
+            ? this.get([args[0]])
+            : undefined
 
-        if (method === 'sendStatus') {
-          this.statusCode = typeof args[0] === 'number' ? args[0] : 0
+          if (method === 'sendStatus') {
+            this.statusCode = typeof args[0] === 'number' ? args[0] : 0
+          }
+
+          return result
         }
-
-        return result
       })
     })
 

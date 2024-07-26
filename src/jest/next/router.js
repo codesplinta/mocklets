@@ -192,7 +192,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     return updatePath(url, options || { shallow: false, scroll: true }, 'replace', asPath)
   })
 
-  const _beforePopStateCallback = () => false
+  let _beforePopStateCallback = () => false
   let _query = {}
   let _hash = ''
   let routingHistoryList = new Stack([])

@@ -16,12 +16,17 @@ import * as jsdom from 'jsdom'
 
 const $fixtures = require('./src/jest/__fixtures__')
 const {
+  /* eslint-disable-next-line */
   make_nextApiRequest,
+  /* eslint-disable-next-line */
   make_nextApiResponse
 } = require('./src/jest/__mocks__/next/api')
 const {
+  /* eslint-disable-next-line */
   make_expressNext,
+  /* eslint-disable-next-line */
   make_expressHttpRequest,
+  /* eslint-disable-next-line */
   make_expressHttpResponse
 } = require('./src/jest/__mocks__/express/http')
 
@@ -70,6 +75,9 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
   const isWindowLocation = property === 'location'
 
   const origLocation = window.document.location.href
+
+  let parser = null
+  let descriptors = null
   let location = ''
 
   if (isWindowLocation) {
@@ -83,8 +91,9 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
     if (isWindowLocation) {
       /*! attribution */
       /* @CHECK: https://github.com/jestjs/jest/issues/890#issuecomment-347580414 */
-      const parser = window.document.createElement('a')
-      const descriptors = Object.getOwnPropertyDescriptors(originalProperty)
+      parser = window.document.createElement('a')
+      descriptors = Object.getOwnPropertyDescriptors(originalProperty)
+
       window.location = {
         assign: jest.fn((url) => {
           location = url
@@ -134,7 +143,7 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
             currentURL[prop] = value
             location = currentURL.toString()
             currentURL = null
-            //descriptors[prop].set.call(originalProperty, value)
+            // descriptors[prop].set.call(originalProperty, value)
           }
         })
       })
@@ -160,6 +169,12 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
   afterEach(() => {
     if (isWindowLocation) {
       location = origLocation
+    } else {
+      if (fakeOrMock &&
+        ('mockClear' in fakeOrMock) &&
+          typeof fakeOrMock.mockClear === 'function') {
+        fakeOrMock.mockClear()
+      }
     }
   })
 
@@ -167,6 +182,13 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
     if (originalProperty) {
       if (!isWindowLocation) {
         window[property] = originalProperty
+      } else {
+        if (parser !== null) {
+          parser = null
+        }
+        if (descriptors !== null) {
+          descriptors = null
+        }
       }
     }
   })
@@ -316,7 +338,6 @@ export const provisionFakeDateForTests = (date = new Date(), resetAfterEach = 1)
  * @api public
  */
 export const provisionFakeBrowserLocalStorageForTests = (clearAfterEach = 1) => {
-
   provisionFakeWebPageWindowObject(
     'localStorage',
     fakeStorageInstanceFactory()
@@ -340,7 +361,6 @@ export const provisionFakeBrowserLocalStorageForTests = (clearAfterEach = 1) => 
  * @api public
  */
 export const provisionFakeBrowserSessionStorageForTests = (clearAfterEach = 1) => {
-
   provisionFakeWebPageWindowObject(
     'sessionStorage',
     fakeStorageInstanceFactory()
@@ -362,11 +382,37 @@ export const provisionFakeBrowserSessionStorageForTests = (clearAfterEach = 1) =
  * @api public
  */
 export const provisionFakeBrowserIntersectionObserverForTests = () => {
-
   provisionFakeWebPageWindowObject(
     'IntersectionObserver',
     fakeIntersectionObserverFactory()
   )
+}
+
+/**
+ * A helper utility that enables the use of fake browser API: `window.alert()`, `window.confirm()`
+ * & `window.prompt()` within tests
+ *
+ * @returns void
+ * @api public
+ */
+export const provisionFakeBrowserDialogForTests = (type, returnType) => {
+  const dialogs = {
+    alert: jest.fn(() => undefined),
+    prompt: jest.fn(() => true),
+    confirm: jest.fn(() => true)
+  }
+
+  switch (true) {
+    case type === 'alert':
+    case type === 'prompt':
+    case type === 'confirm':
+      if (typeof returnType === 'boolean') {
+        (dialogs[type]).mockImplementationOnce(() => returnType)
+      }
+      provisionFakeWebPageWindowObject(type, dialogs[type])
+      break
+    default:
+  }
 }
 
 /**
@@ -386,7 +432,7 @@ export const provisionFakeBrowserURILocationForTests_withAddons = () => {
     /* eslint-disable-next-line */
     $setWindowOrigin_forThisTestCase (newOrigin) {
       if (typeof newOrigin !== 'string') {
-        return;
+        return
       }
 
       if (jsdom && typeof jsdom.changeURL === 'function') {
@@ -686,6 +732,8 @@ export const provisionMockedReacti18NextForTests = (translationMapCallback = () 
 export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = () => undefined) => {
   /* eslint-disable-next-line */
   const { Console } = global.console
+  const $console = global.console
+  /* eslint-disable-next-line */
   console = new Console(process.stdout, process.stderr)
 
   let mock = null
@@ -712,6 +760,7 @@ export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = ()
     }
 
     mock = null
+    global.console = $console
   })
 
   return mock
@@ -832,6 +881,7 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
       }
     }
 
+    /* eslint-disable-next-line */
     const [, fixtureKeys] = /\|(?:[ ]+)\[fixture\:([^\]]{1,}?)\](?:\s{0,})?$/.exec(
       currentTestName.trim()
     ) || ['', '']
@@ -948,7 +998,7 @@ export const provisionMockedJSConsoleLoggingForTests = (
 
       if (logsBuffer.length > 0) {
         if (loggingStrategy === $DELAYED_LOGGING) {
-          logsBuffer.map(({ type, messages }) => {
+          logsBuffer.forEach(({ type, messages }) => {
             console[type](...messages)
           })
         }

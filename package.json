@@ -122,6 +122,8 @@
     "@rollup/plugin-strip": "^3.0.4",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/mock-fs": "4.13.4",
+    "fetch-mock": "^10.1.1",
+    "ghooks": "^2.0.4",
     "jest": "^26.6.3",
     "mock-fs": "5.2.0",
     "nock": "^13.5.4",
@@ -135,5 +137,13 @@
     "@types/mock-fs": "4.13.4",
     "mock-fs": "5.2.0",
     "timekeeper": "2.3.1"
+  },
+  "config": {
+    "ghooks": {
+      "pre-commit": "npm run lint",
+      "pre-push": "npm run test",
+      "post-merge": "rimraf node_modules && npm install",
+      "post-rewrite": "npm install"
+    }
   }
 }

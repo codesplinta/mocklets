@@ -89,6 +89,14 @@ declare module 'mocklets' {
  */
   export function provisionFakeBrowserMatchMediaForTests(): void;
 /**
+ * A helper utility that enables the use of fake browser API: `window.alert()`, `window.confirm()`
+ * & `window.prompt()` within tests 
+ * 
+ * @returns void
+ * @api public
+ */
+  export function provisionFakeBrowserDialogForTests(type: 'alert' | 'confirm' | 'prompt', returnType?: boolean): void;
+/**
  * A helper utility that enables the use of fake browser API: `window` URI-based APIs within tests
  *
  * @return {{ $setWindowOrigin_forThisTestCase: Function }}

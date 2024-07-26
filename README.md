@@ -12,7 +12,7 @@ The very popular testing frameworks for unit testing and e-to-e tests are good a
 
 This is where **mocklets** come in.
 
-This project provides re-usable and standard mocks/stubs/fakes for _Jest_ only.
+This project provides re-usable and standard mocks/stubs/fakes for _Jest_ only (Vitest coming soon).
 
 ## Installation
 >Install using `npm`
@@ -29,13 +29,13 @@ Or install using `yarn`
 
 ## Support
 
->**mockelts** can ONLY run well on Node.js v10.0.0 to Node.js v19.3.x as well as Jest v25.5.1 to Jest 29.5.x
+>**mocklets** can ONLY run well on [**Node.js**](https://nodejs.org/) v10.0.0 - v19.3.x as well as [**Jest**](https://jestjs.io/) v25.5.1 - v29.5.x
 
 ## Getting Started
 
 You can use mocklets inside your jest test suite files simply by importing into these files and calling the functions outside or within the `describe()` callback. You can also make addditional calls within any of `test()` callbacks.
 
-It is important to note that when 
+It is important to note that when [Kl](https://tigeroakes.com/posts/jest-mock-and-import-statements/)
 
 ## Some Basic Example (on the browser)
 >src/greetingMaker/index.js
@@ -81,9 +81,7 @@ describe('{greetingMaker(..)} | Unit Test Suite', () => {
     $EXECUTION.IGNORE_RESET_AFTER_EACH_TEST_CASE
   );
 
-  provisionFakeBrowserSessionStorageForTests(
-    $EXECUTION.RESET_AFTER_EACH_TEST_CASE
-  )
+  provisionFakeBrowserSessionStorageForTests()
 
   test('it should return the correct greeting text given no valid format', () => {
 
@@ -106,7 +104,9 @@ describe('{greetingMaker(..)} | Unit Test Suite', () => {
 
 ## More Basic Examples (on the server)
 
-Below are some more ways you can use `mockelts`.
+Below are some more ways you can use `mocklets`.
+
+- Imagine we have a simple **ExpressJS** app with one route defined that reads a file from disk and serves the contents down to the http client. See below:
 
 >src/controller/downloads/getFile.js
 ```js
@@ -152,6 +152,8 @@ app.listen(8080, function() {
 });
 ```
 
+- We can write a test for the **ExpressJS** app (using `mocklets`) as follows:
+
 >src/controller/downloads/\__tests\__/getFile.spec.js
 ```js
 import  {
@@ -162,12 +164,16 @@ import  {
   $EXECUTION
 } from 'mocklets'
 
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs')
+}));
+
 /* @HINT: 
  *
  * Mocking/Faking the filesystem (in memory)
  * 
- * Always remember, for all imported packages,
- * {mocklets} depends on manual hoisting!!
+ * Always remember, {mocklets} requires the 'fs'
+ * module hoisted (as above) !!
  */
 provisionMockedNodeJSFileSystemForTests((mock, path, require) => {
   const expressJSPublicFolderPath = require.resolve(
@@ -180,8 +186,8 @@ provisionMockedNodeJSFileSystemForTests((mock, path, require) => {
       items: {
         'open-scape.txt': mock.file({
           content: 'Hello World!',
-          ctime: new Date(1411609054470), //Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
-          mtime: new Date(1411609054470) //Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
+          ctime: new Date(1411609054470), // Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
+          mtime: new Date(1411609054470) // Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
         }),
         '.DS_store': { mode: parseInt('444', 8), content: '' },
         'pixies.png': Buffer.from([8, 6, 7, 5, 3, 0, 9])
@@ -192,14 +198,9 @@ provisionMockedNodeJSFileSystemForTests((mock, path, require) => {
 
 /* @HINT:
  *
- *
- * Remember that we are importing 'getFile' ES module
- * here because {mocklets} uses manual hoisting to
- * set mocks up as opposed to automatic mocking used
- * by Jest + Babel
  * 
  * Since, the 'getFile' module makes use of `res.sendFile()`,
- * I have to import it after mocking the filesystem (above)
+ * It has to be imported after mocking the filesystem (as above)
  */
 import getFile from '../../getFile';
 
@@ -233,9 +234,9 @@ provisionFakeDateForTests(
 const { getTestFixtures } = provisionFixturesForTests_withAddons()
 
 
-describe('...', () => {
+describe('Testing `getFile()` ExpressJS app controller action', () => {
   test(
-    '... | [expressHttpRequest, expressHttpResponse, expressNext]',
+    "should send error as http response to client if file doesn't exist | [expressHttpRequest, expressHttpResponse, expressNext]",
     () => {
       /* @NOTE: Arrange */
       const req  = getTestFixture('expressHttpRequest', {
@@ -283,7 +284,7 @@ describe('...', () => {
   })
 
   test(
-    '... | [expressHttpRequest, expressHttpResponse, expressNext]',
+    "should send file as http response to client if file exists | [expressHttpRequest, expressHttpResponse, expressNext]",
     () => {
       /* @NOTE: Arrange */
       const req  = getTestFixture('expressHttpRequest', {
@@ -327,12 +328,317 @@ describe('...', () => {
 })
 ```
 
+- Imagine we created a simple function called: `isLocalHost()` to check if a web page is served from _localhost_. See below:
+
+>src/helpers/index.js
+```js
+
+export const isLocalHost = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return ["http://localhost", "http://127.0.0.1"].includes(
+    window.location.origin.replace(/\:[\d$]{4,5}/, "")
+  ) || Boolean(
+      window.location.hostname === 'localhost' ||
+      // [::1] is the IPv6 localhost address.
+      window.location.hostname === '[::1]' ||
+      // 127.0.0.1/8 is considered localhost for IPv4.
+      window.location.hostname.match(
+        /^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
+      )
+  )
+};
+```
+
+- We could write a unit test for the `isLocalHost()` function (using `mocklets`) as follows:
+
+```js
+import {
+  provisionFakeBrowserURILocationForTests_withAddons
+} from 'mocklets'
+
+import {
+  isLocalHost
+} from './src/helpers/index'
+
+describe('Tests for isLocalHost() function', () => {
+  const {
+    $setWindowOrigin_forThisTestCase
+  } = provisionFakeBrowserURILocationForTests_withAddons()
+
+  it('should return `false` if page host isn\'t localhost', () => {
+    $setWindowOrigin_forThisTestCase('https://example.com')
+
+    expect(isLocalHost()).toBe(false)
+  });
+
+  it('should return `true` if page host is localhost', () => {
+    $setWindowOrigin_forThisTestCase('http://localhost')
+
+    expect(isLocalHost()).toBe(true)
+  })
+})
+```
+
 ## Usage
+Setting up **mocklets** for use is very easy. All you need is to import the relavant API to provision whatever mock/fake you need and let **mocklets**  handdle  the rest.
 
-It's important to not that `mockelets` depends heavily on **manual hoisting** for it to work. Usually, Jest and Babel work together to automatocally hoist mocks on the test file. However, `mocklets` takes a different approach using
-`jest.doMock()` instead of `jest.mock()` to avoidd automatic hoisting at all costs.
+- Let's take a simple test case
 
-...
+>So, instead of doing this below...
+
+```js
+import {
+  getUserFromStorage
+} from '../../utils'
+
+describe('Test getUserFromStorage function', () => {
+  /* eslint-disable-next-line no-proto */
+  jest.spyOn(window.sessionStorage.__proto__, 'getItem').mockImplementationOnce((key) => {
+    if (key === 'user') {
+      return '{ "lastname": "Ebeihie", "firstname" : "Jonah", "gender": "male" }'
+    }
+  });
+
+  it('should return the user object', () => {
+    expect(
+      getUserFromStorage()
+    ).toBe('{ "lastname": "Ebeihie", "firstname" : "Jonah", "gender": "male" }')
+  })
+})
+```
+
+>It's better to do this...
+
+```js
+import {
+  provisionFakeBrowserSessionStorageForTests
+} from 'mocklets'
+
+import {
+  getUserFromStorage
+} from '../../utils'
+
+describe('Test getUserFromStorage function', () => {
+  provisionFakeBrowserSessionStorageForTests()
+
+  it('should return the user object', () => {
+    window.sessionStorage.setItem(
+      "user",
+      '{ "lastname": "Ebeihie", "firstname" : "Jonah", "gender": "male" }'
+    )
+
+    expect(
+      getUserFromStorage()
+    ).toBe('{ "lastname": "Ebeihie", "firstname" : "Jonah", "gender": "male" }')
+  })
+})
+```
+
+- Now, let's take a **NextJS** project test case
+
+>Again, instead of doing the following...
+
+```tsx
+import React from 'react';
+import { render, waitFor, fireEvent } from '@testing-library/react';
+
+import * as router from 'next/router';
+import type { NextRouter } from 'next/router';
+
+import {
+  asButton,
+  articlePage_editButtonName,
+  articlePage_backButtonName
+} from '../../../constants';
+import MyArticleComponentUsingNextRouter from '../../pages/blog/article/[articleId]';
+import { dummyArticleId } from '../__fixtures__/forArticles';
+
+process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000/';
+
+describe('Test article page logic', () => {
+  const mockPush = jest.fn(() => undefined);
+  const mockBack = jest.fn(() => undefined);
+
+  beforeEach(() => {
+    mockPush.mockClear()
+    mockBack.mockClear()
+  });
+
+  it('should navigate to edit-article page', async () => {
+    jest.spyOn(router, 'useRouter').mockImplementation(() => ({
+      query: {
+        id: dummyArticleId
+      },
+      push: mockPush,
+    } as never as NextRouter));
+
+    const { getByRole } = render(
+      <MyArticleComponentUsingNextRouter />
+    )
+    
+    /* @HINT: Use ARIA attributes and constants so test code isn't tightly coupled to application code */
+    /* @NOTE: Imports; `asButton` = 'button' and `articlePage_editButton` = 'edit' */
+    fireEvent.click(getByRole(asButton, { name: articlePage_editButtonName }));
+
+    await waitFor(
+      () => expect(
+        mockPush
+      ).toHaveBeenCalledWith(
+        `/blog/article/edit/${dummyArticleId}`
+      )
+    );
+  });
+
+  it('should navigate back to article page', async () => {
+    jest.spyOn(router, 'useRouter').mockImplementation(() => ({
+      query: {
+        id: dummyArticleId
+      },
+      pathname: `/blog/article/edit/${dummyArticleId}`,
+      back: mockback
+    } as never as NextRouter));
+
+    const { getByRole } = render(
+      <MyArticleComponentUsingNextRouter />
+    )
+    
+    /* @HINT: Use ARIA attributes and constants so test code isn't tightly coupled to application code */
+    /* @NOTE: Imports; `asButton` = 'button' and `articlePage_backButton` = 'back' */
+    fireEvent.click(getByRole(asButton, { name: articlePage_backButtonName }));
+
+    await waitFor(
+      () => expect(
+        back
+      ).toHaveBeenCalledTimes(1)
+    );
+  });
+});
+```
+
+>It's much better to do this...
+
+```tsx
+import React from 'react';
+import { render, waitFor, fireEvent } from '@testing-library/react';
+
+import * as router from 'next/router';
+import { NextRouter } from 'next/router';
+
+import {
+  provisionMockedNextJSRouterForTests_withAddons,
+  provisionEnvironmentalVariablesForTests_withAddons,
+  $EXECUTION
+} from 'mocklets';
+
+import {
+  asButton,
+  articlePage_editButtonName,
+  articlePage_backButtonName
+} from '../../../constants';
+import MyArticleComponentUsingNextRouter from '../../pages/blog/article/[articleId]';
+import { dummyArticleId } from '../__fixtures__/forArticles';
+
+
+describe('Test article page logic', () => {
+
+  const { 
+    $setSpyOn_useRouter_withReturnValueOnce
+  } = provisionMockedNextJSRouterForTests_withAddons();
+  const {
+    $setEnv_forThisTestSuite
+  } = provisionEnvironmentalVariablesForTests_withAddons(
+    $EXECUTION.IGNORE_RESET_AFTER_EACH_TEST_CASE
+  );
+
+  $setEnv_forThisTestSuite('NEXT_PUBLIC_API_URL', 'http://localhost:3000/');
+
+  it('should navigate to edit-article page', async () => {
+    const { push }: NextRouter = $setSpyOn_useRouter_withReturnValueOnce(
+      {
+        query: {
+          id: dummyArticleId
+        },
+      },
+      router
+    );
+
+    const { getByRole } = render(
+      <MyArticleComponentUsingNextRouter />
+    )
+    
+    /* @HINT: Use ARIA attributes and constants so test code isn't tightly coupled to application code */
+    /* @NOTE: Imports; `asButton` = 'button' and `articlePage_editButton` = 'edit' */
+    fireEvent.click(getByRole(asButton, { name: articlePage_editButtonName }));
+
+    await waitFor(
+      () => expect(
+        push
+      ).toHaveBeenCalledWith(
+        `/blog/article/edit/${dummyArticleId}`
+      )
+    );
+  });
+
+  it('should navigate back to article page', async () => {
+    const { back }: NextRouter = $setSpyOn_useRouter_withReturnValueOnce(
+      {
+        query: {
+          id: dummyArticleId
+        },
+        pathname: `/blog/article/edit/${dummyArticleId}`,
+      },
+      router
+    );
+
+    const { getByRole } = render(
+      <MyArticleComponentUsingNextRouter />
+    )
+    
+    /* @HINT: Use ARIA attributes and constants so test code isn't tightly coupled to application code */
+    /* @NOTE: Imports; `asButton` = 'button' and `articlePage_editButton` = 'edit' */
+    fireEvent.click(getByRole(asButton, { name: articlePage_editButtonName }));
+
+    await waitFor(
+      () => expect(
+        back
+      ).toHaveBeenCalledTimes(1)
+    );
+  });
+});
+```
+
+## Setting up for Jest
+To be able to use mocklets with the most ease and clarity, it is advised the you set up the (Jest configuration for `setupFilesAfterEnv`](https://jest-archive-august-2023.netlify.app/docs/26.x/configuration/#setupfilesafterenv-array).
+
+**mockelts** exposes a jest setup file inside an _.export_ folder.
+
+See example (below) of how to set it up inside a `jest.config.js` file:
+
+>jest.config.js
+```js
+module.exports = {
+  testTimeout: 90000,
+  workerIdleMemoryLimit: '512MB',
+  cacheDirectory: '<rootDir>/.jest-cache',
+  moduleNameMapper: {
+    // Handle CSS imports (with CSS modules)
+    // https://jestjs.io/docs/webpack#mocking-css-modules
+    '^.+\\.module\\.(css|sass|scss)$': 'identity-obj-proxy',
+
+    // Handle image imports
+    // https://jestjs.io/docs/webpack#handling-static-assets
+    '^.+\\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$': '<rootDir>/__mocks__/fileMock.js',
+  },
+  setupFilesAfterEnv: [
+    /*! The mocklets jest setup file should be the first entry into the array */
+    '<rootDir>/node_modules/mocklets/.export/jest.setup.js',
+    '<rootDir>/setupJestTests.ts'
+  ],
+}
+```
 
 ## License
 

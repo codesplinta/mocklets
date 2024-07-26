@@ -1,5 +1,5 @@
 <a name="0.0.6"></a>
-# 0.0.6 (2022-06-23)
+# 0.0.6 (2022-08-30)
 
 ### Feature Added
 - Added `provisionMockedNextJSRouterForTests_withAddons()` helper function
@@ -9,6 +9,10 @@
 - Added `provisionFixturesForTests_withAddons()` helper function
 - Added `provisionMockedJSConsoleLoggingForTests()` helper function
 - Added `provisionMockedNodeJSFileSystemForTests()` helper function
+- Added `provisionFakeBrowserMatchMediaForTests()` helper function
+- Added `provisionMockedMaterialUIKitForTests()` helper function
+- Added `provisionMockedReacti18NextForTests()` helper function
+- Added `provisionFakeBrowserURILocationForTests_withAddons()` helper function
 - Added `` helper function
 - Added `` helper function
 
@@ -16,7 +20,7 @@
 - Adding `middleware` fake **Redux**
 
 ### Bug Fixes
-- Fixed bug in `` helper function
+- Fixed bug in `provisionFakeBrowserIntersectionObserverForTests()` helper function
 
 <a name="0.0.5"></a>
 # 0.0.5 (2022-05-05)

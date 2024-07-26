@@ -1,22 +1,26 @@
 import { fakeReactJSTransitionGroupPackageFactory } from './src/jest/react-transition-group'
 import { fakeReactHookFormPackageFactory } from './src/jest/react-hook-form'
-//import { fakeReacti18NextPackageFactory } from './src/jest/react-i18next'
+import { fakeReacti18NextPackageFactory } from './src/jest/react-i18next'
 import { fakePinoLoggerPackageFactory } from './src/jest/pino'
 import { fakeWinstonLoggerPackageFactory } from './src/jest/winston'
-//import { fakeCloudinaryUploaderInstanceFactory } from './src/jest/cloudinary'
+// import { fakeCloudinaryUploaderInstanceFactory } from './src/jest/cloudinary'
+import { fakeMaterialUIKitPackageFactory } from './src/jest/@mui/material'
 import { fakeNextJSRouterPackageFactory } from './src/jest/next/router'
 import { fakeAdonisJSCachePackageFactory } from './src/jest/adonisjs-cache'
+import { fakematchMediaFactory } from './src/jest/matchMedia'
 import { fakeIntersectionObserverFactory } from './src/jest/IntersectionObserver'
 import { fakeResizeObserverFactory } from './src/jest/ResizeObserver'
 import { fakeStorageInstanceFactory } from './src/jest/browserStorage'
 
+import * as jsdom from 'jsdom'
+
 const $fixtures = require('./src/jest/__fixtures__')
-const { 
+const {
   make_nextApiRequest,
   make_nextApiResponse
-} = require('./src/jest/__mocks__/next/api'),
+} = require('./src/jest/__mocks__/next/api')
 const {
-  make_expressNext, 
+  make_expressNext,
   make_expressHttpRequest,
   make_expressHttpResponse
 } = require('./src/jest/__mocks__/express/http')
@@ -26,7 +30,8 @@ const $NORMAL_LOGGING = -1
 const $COMPACT_LOGGING = 3
 
 /**
- * Validates  properties on the `window` object that can be overriden.
+ * Helps as an assertion signature for ensureing that readonly members
+ * are not overwritten by assignment on the `globalThis: Window` object
  *
  * @param {String} property
  * @throws {Error}
@@ -53,30 +58,116 @@ function assertReadonlyGlobalsNotMutable (property) {
 
 /**
  * A helper utility for replacing native object and BOM APIs in web browsers
- * with a fake implementation replica so as to make testing a lot easier.
+ * with a fake implementation/replica so as to make testing a lot easier.
  *
- * @param {String} property
+ * @param {String | keyof Window} property
  * @param {*} fakeOrMock
  *
  * @returns void
  */
-const provisionFakeWebPageWindowObject = (property, fakeOrMock) => {
+const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
   const { [property]: originalProperty } = window
+  const isWindowLocation = property === 'location'
+
+  const origLocation = window.document.location.href
+  let location = ''
+
+  if (isWindowLocation) {
+    location = origLocation
+  }
 
   beforeAll(() => {
     assertReadonlyGlobalsNotMutable(property)
     delete window[property]
 
-    Object.defineProperty(window, property, {
-      configurable: true,
-      writable: true,
-      value: fakeOrMock
-    })
+    if (isWindowLocation) {
+      /*! attribution */
+      /* @CHECK: https://github.com/jestjs/jest/issues/890#issuecomment-347580414 */
+      const parser = window.document.createElement('a')
+      const descriptors = Object.getOwnPropertyDescriptors(originalProperty)
+      window.location = {
+        assign: jest.fn((url) => {
+          location = url
+          descriptors.assign.value.call(originalProperty, url)
+        }),
+        reload: jest.fn((forcedReload = false) => {
+          if (forcedReload) {
+            descriptors.reload.value.call(originalProperty, forcedReload)
+          } else {
+            descriptors.reload.value.call(originalProperty)
+          }
+        }),
+        replace: jest.fn((url) => {
+          location = url
+          descriptors.replace.value.call(originalProperty, url)
+        }),
+        toString () {
+          return location
+        }
+      };
+      ['href', 'protocol', 'host', 'hostname', 'origin', 'port', 'pathname', 'search', 'hash'].forEach(prop => {
+        Object.defineProperty(window.location, prop, {
+          get: function () {
+            parser.href = location
+
+            if (prop === 'href') {
+              return (parser[prop]).replace(/\/$/, '')
+            }
+            return parser[prop]
+          },
+          set: function (value) {
+            let currentURL = new URL(location)
+
+            if (prop === 'href') {
+              location = value.indexOf('http') === 0
+                ? value
+                : `${currentURL.origin}${value.indexOf('/') === 0 ? value : '/' + value}`
+              currentURL = null
+              descriptors.href.set.call(originalProperty, value)
+              return
+            }
+
+            if (prop === 'origin') {
+              throw new TypeError('Cannot redefine property: origin')
+            }
+
+            currentURL[prop] = value
+            location = currentURL.toString()
+            currentURL = null
+            //descriptors[prop].set.call(originalProperty, value)
+          }
+        })
+      })
+    } else {
+      let clone = null
+
+      if (typeof originalProperty === 'object' &&
+        property !== 'localStorage' &&
+          property !== 'sessionStorage') {
+        clone = Object.create(Object.getPrototypeOf(originalProperty))
+        const descriptors = Object.getOwnPropertyDescriptors(originalProperty)
+        Object.defineProperties(clone, descriptors)
+      }
+
+      Object.defineProperty(window, property, {
+        configurable: true,
+        writable: true,
+        value: clone || fakeOrMock
+      })
+    }
+  })
+
+  afterEach(() => {
+    if (isWindowLocation) {
+      location = origLocation
+    }
   })
 
   afterAll(() => {
     if (originalProperty) {
-      window[property] = originalProperty
+      if (!isWindowLocation) {
+        window[property] = originalProperty
+      }
     }
   })
 }
@@ -106,15 +197,12 @@ const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
     )
   }
 
-  /* @HINT: manual hoisting ... */
-  require(packageOrModuleName)
-
   afterEach(() => {
     jest.clearAllMocks()
 
     if (typeof fakeOrMock === 'function') {
       if (fakeOrMock.length === 0) {
-        /* @HINT: Avoid automatic hoisting by Jest & Babel */
+        /* @HINT: Silence automatic hoisting by Jest & Babel */
         jest.doMock(packageOrModuleName, fakeOrMock)
       }
     } else {
@@ -125,11 +213,6 @@ const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
         () => fakeOrMock
       )
     }
-  })
-
-  beforeEach(() => {
-    /* @HINT: manual hoisting ... */
-    require(packageOrModuleName)
   })
 
   afterAll(() => {
@@ -233,6 +316,7 @@ export const provisionFakeDateForTests = (date = new Date(), resetAfterEach = 1)
  * @api public
  */
 export const provisionFakeBrowserLocalStorageForTests = (clearAfterEach = 1) => {
+
   provisionFakeWebPageWindowObject(
     'localStorage',
     fakeStorageInstanceFactory()
@@ -256,6 +340,7 @@ export const provisionFakeBrowserLocalStorageForTests = (clearAfterEach = 1) => 
  * @api public
  */
 export const provisionFakeBrowserSessionStorageForTests = (clearAfterEach = 1) => {
+
   provisionFakeWebPageWindowObject(
     'sessionStorage',
     fakeStorageInstanceFactory()
@@ -277,10 +362,43 @@ export const provisionFakeBrowserSessionStorageForTests = (clearAfterEach = 1) =
  * @api public
  */
 export const provisionFakeBrowserIntersectionObserverForTests = () => {
+
   provisionFakeWebPageWindowObject(
     'IntersectionObserver',
     fakeIntersectionObserverFactory()
   )
+}
+
+/**
+ * A helper utility that enables the use of fake browser API: `window` URI-based APIs within tests
+ *
+ * @return {{ $setWindowOrigin_forThisTestCase: Function }}
+ * @api public
+ */
+/* eslint-disable-next-line */
+export const provisionFakeBrowserURILocationForTests_withAddons = () => {
+
+  provisionFakeWebPageWindowObject(
+    'location'
+  )
+
+  return {
+    /* eslint-disable-next-line */
+    $setWindowOrigin_forThisTestCase (newOrigin) {
+      if (typeof newOrigin !== 'string') {
+        return;
+      }
+
+      if (jsdom && typeof jsdom.changeURL === 'function') {
+        jsdom.changeURL(window, newOrigin)
+      } else {
+        const [protocol, hostname] = newOrigin.trim().split('//')
+
+        window.location.protocol = protocol || 'http:'
+        window.location.hostname = hostname
+      }
+    }
+  }
 }
 
 /**
@@ -293,6 +411,19 @@ export const provisionFakeBrowserResizeObserverForTests = () => {
   provisionFakeWebPageWindowObject(
     'ResizeObserver',
     fakeResizeObserverFactory()
+  )
+}
+
+/**
+ * A helper utility that enables the use of fake browser API: `window.matchMedia` within tests
+ *
+ * @return void
+ * @api public
+ */
+export const provisionFakeBrowserMatchMediaForTests = () => {
+  provisionFakeWebPageWindowObject(
+    'matchMedia',
+    fakematchMediaFactory()
   )
 }
 
@@ -322,6 +453,7 @@ export const provisionMockedNextJSRouterForTests = () => {
     ___eventsSubscribed
   )
 
+  /* @HINT: This doesn't work for now */
   provisionFakeJSObject(
     'next/router',
     routerFactory
@@ -340,12 +472,14 @@ export const provisionMockedNextJSRouterForTests = () => {
  * @return {{ $getAllRouterEventsMap: Function, $setSpyOn_useRouter: Function, $setSpyOn_useRouter_WithReturnValueOnce: Function }}
  * @api public
  */
+/* eslint-disable-next-line */
 export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 1) => {
   let ___eventsSubscribed = {}
   const routerFactory = fakeNextJSRouterPackageFactory(
     ___eventsSubscribed
   )
 
+  /* @HINT: This doesn't work for now */
   provisionFakeJSObject(
     'next/router',
     routerFactory
@@ -362,9 +496,7 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
     $getAllRouterEventsMap: () => ___eventsSubscribed,
     $setSpyOn_useRouter: (nextRouterExportObject) => {
       return jest.spyOn(
-        nextRouterExportObject
-        ? nextRouterExportObject
-        : require('next/router'), 
+        nextRouterExportObject || require('next/router'),
         'useRouter'
       )
     },
@@ -374,17 +506,18 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
       locale = 'en-US',
       isPreview = false,
       basePath = '/'
-    }) => {
+    }, nextRouterExportObject, nextNavigationExportObject
+    ) => {
       const useRouter = jest.spyOn(
-        require('next/router'),
+        nextRouterExportObject || require('next/router'),
         'useRouter'
       )
       const usePathname = jest.spyOn(
-        require('next/naviagtion'),
+        nextNavigationExportObject || require('next/naviagtion'),
         'usePathname'
       )
       const useSearchParams = jest.spyOn(
-        require('next/naviagtion'),
+        nextNavigationExportObject || require('next/naviagtion'),
         'useSearchParams'
       )
 
@@ -398,7 +531,7 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
 
       const returnValue = {
         ...$routerFields
-      };
+      }
 
       useRouter.mockReturnValueOnce(returnValue)
 
@@ -427,9 +560,11 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
  * @return {{ $setSpyOn_useFormContext: Function, $setSpyOn_useFromContext_WithReturnValueOnce: Function }}
  * @api public
  */
+/* eslint-disable-next-line */
 export const provisionMockedReactHookFormForTests_withAddons = () => {
   const hookFormFactory = fakeReactHookFormPackageFactory()
 
+  /* @HINT: This doesn't work for now */
   provisionFakeJSObject(
     'react-hook-form',
     hookFormFactory()
@@ -438,22 +573,17 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
   return {
     $setSpyOn_useFormContext: (reactHookFormExportObject) => {
       return jest.spyOn(
-        reactHookFormExportObject
-        ? reactHookFormExportObject
-        : require('react-hook-form'), 'useFormContext')
+        reactHookFormExportObject || require('react-hook-form'), 'useFormContext')
     },
     $setSpyOn_useFromContext_withReturnValueOnce: ({
       formState = {},
       values = {}
-    }) => {
+    }, reactHookFormExportObject
+    ) => {
       const useFormContext = jest.spyOn(
-        require('react-hook-form'),
+        reactHookFormExportObject || require('react-hook-form'),
         'useFormContext'
       )
-      // const useForm = jest.spyOn(
-      //   require('react-hook-form'),
-      //   'useForm'
-      // )
 
       const $formContextFields = (hookFormFactory().useFormContext())
 
@@ -462,7 +592,7 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
 
       const returnValue = {
         ...$formContextFields
-      };
+      }
 
       useFormContext.mockReturnValueOnce(returnValue)
 
@@ -472,13 +602,27 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
 }
 
 /**
+ * A helper utility that enables the use of mock Material UI kit: `@mui/material` within tests
+ *
+ * @return void
+ * @api public
+ */
+export const provisionMockedMaterialUIKitForTests = () => {
+  /* @HINT: This doesn't work for now */
+  provisionFakeJSObject(
+    '@mui/material',
+    fakeMaterialUIKitPackageFactory()
+  )
+}
+
+/**
  * A helper utility that enables the use of mock server-side logger: `pino` within tests
  *
  * @return void
  * @api public
  */
 export const provisionMockedPinoLoggerForTests = () => {
-
+  /* @HINT: This doesn't work for now */
   provisionFakeJSObject(
     'pino',
     fakePinoLoggerPackageFactory()
@@ -492,7 +636,7 @@ export const provisionMockedPinoLoggerForTests = () => {
  * @api public
  */
 export const provisionMockedWinstonLoggerForTests = () => {
-
+  /* @HINT: This doesn't work for now */
   provisionFakeJSObject(
     'winston',
     fakeWinstonLoggerPackageFactory()
@@ -506,6 +650,7 @@ export const provisionMockedWinstonLoggerForTests = () => {
  * @api public
  */
 export const provisionMockedReactTransitionGroupForTests = () => {
+  /* @HINT: This doesn't work for now */
   provisionFakeJSObject(
     'react-transition-group',
     fakeReactJSTransitionGroupPackageFactory()
@@ -513,27 +658,48 @@ export const provisionMockedReactTransitionGroupForTests = () => {
 }
 
 /**
+ * A helper utility that enables the use of mock i18n for ReactJS: `react-i18next` within tests
+ *
+ * @return void
+ * @api public
+ */
+export const provisionMockedReacti18NextForTests = (translationMapCallback = () => ({})) => {
+  /* @HINT: This doesn't work for now */
+  provisionFakeJSObject(
+    'react-i18next',
+    fakeReacti18NextPackageFactory(
+      typeof translationMapCallback === 'function'
+        ? translationMapCallback()
+        : {}
+    )
+  )
+}
+
+/**
  * A helper utility that enables the use of mock filesystem targeting the 'node:fs' package only for test cases
- * 
+ *
  * @param {Function} mockFactoryCallback
- * 
+ *
  * @return typeof import('mock-fs')
  * @api public
  */
 export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = () => undefined) => {
+  /* eslint-disable-next-line */
   const { Console } = global.console
   console = new Console(process.stdout, process.stderr)
 
   let mock = null
-  
-  mock = require('mock-fs');
+
+  mock = require('mock-fs')
 
   if (typeof mockFactoryCallback === 'function') {
     mockFactoryCallback(mock, require('path'), require)
   }
 
   afterEach(() => {
-    mock.restore()
+    if (mock) {
+      mock.restore()
+    }
 
     if (typeof mockFactoryCallback === 'function') {
       mockFactoryCallback(mock, require('path'), require)
@@ -541,32 +707,36 @@ export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = ()
   })
 
   afterAll(() => {
-    mock.restore()
+    if (mock) {
+      mock.restore()
+    }
+
     mock = null
   })
 
-  return mock;
+  return mock
 }
 
 /**
  * A helper utility that enables the use of fixtures loaded from this package and elsewhere
  *
  * @param {1 | 0} resetAfterEach
- * 
+ *
  * @return {{ getTestFixtures: Function, mutateTestFixture: Function }}
  * @api public
  */
+/* eslint-disable-next-line */
 export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
-
-  const $__cachedExpressJSResponse = null;
+  /* eslint-disable-next-line */
+  const $__cachedExpressJSResponse = null
 
   const state = {
     allFixtures: {},
     __fixturesCache: {}
-  };
+  }
 
   const getTestFixtures = (fixtureKey, extrasFixturesState) => {
-    let fixtures = state.allFixtures;
+    let fixtures = state.allFixtures
 
     if (typeof fixtureKey !== 'undefined') {
       if (extrasFixturesState instanceof Object) {
@@ -590,7 +760,9 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
             )
             break
           case 'expressHttpResponse':
+            /* eslint-disable-next-line */
             if ($__cachedExpressJSResponse !== null) {
+              /* eslint-disable-next-line */
               state.allFixtures[fixtureKey] = $__cachedExpressJSResponse
               fixtures = mutateTestFixture(fixtureKey, extrasFixturesState)
             } else {
@@ -600,11 +772,11 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
             }
             break
           case 'expressNext':
-            if (typeof extrasFixturesState === 'function'
-              || ('mock' in extrasFixturesState)) {
+            if (typeof extrasFixturesState === 'function' ||
+              ('mock' in extrasFixturesState)) {
               throw new TypeError(
                 'second argument: `extraFixturesState` is not a Jest spy function'
-              );
+              )
             }
             fixtures = make_expressNext(
               extrasFixturesState
@@ -618,51 +790,50 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
       }
     }
 
-    return fixtures;
-  };
+    return fixtures
+  }
   const mutateTestFixture = (fixtureKey, currentFixtureState = {}) => {
-    const formerFixtureState = state.allFixtures[fixtureKey];
+    const formerFixtureState = state.allFixtures[fixtureKey]
     state.allFixtures[fixtureKey] = Object.assign(
       {},
       formerFixtureState,
-      currentFixtureState || {},
+      currentFixtureState || {}
     )
-  };
-
+  }
 
   beforeAll(() => {
     state.__fixturesCache = Object.assign(
       {},
       $fixtures
-    );
+    )
   })
 
   beforeEach(() => {
     const __fixturesCacheClone = Object.assign(
       {},
       state.__fixturesCache
-    );
- 
-    let currentTestName = ""
+    )
+
+    let currentTestName = ''
 
     try {
       /* @HINT: Workaround for Jest v27.x and below */
-      currentTestName = jasmine['currentTest'].fullName;
+      currentTestName = jasmine.currentTest.fullName
     } catch (_) {
       try {
         /* @HINT: Workaround for Jest v28.x and above */
         expect(undefined).to_$et(undefined)
       } catch (error) {
         if (error instanceof TypeError) {
-          currentTestName = error.message;
+          currentTestName = error.message
         }
       } finally {
         currentTestName = expect.getState().currentTestName
       }
     }
 
-    const [ , fixtureKeys ] = /\|(?:[ ]+)\[fixture\:([^\]]{1,}?)\](?:\s{0,})?$/.exec(
-      currentTestName
+    const [, fixtureKeys] = /\|(?:[ ]+)\[fixture\:([^\]]{1,}?)\](?:\s{0,})?$/.exec(
+      currentTestName.trim()
     ) || ['', '']
 
     if (fixtureKeys.trim() !== '') {
@@ -676,6 +847,7 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
 
   afterEach(() => {
     state.allFixtures = {}
+    /* eslint-disable-next-line */
     $__cachedExpressJSResponse = null
 
     if (resetAfterEach) {
@@ -695,66 +867,67 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
 
 /**
  * A helper utility that enables the use of mock/fakes for `console` logging only for test cases
- * 
+ *
  * @param {(-1 | 2 | 3)=} loggingStrategy
  * @param {(Array.<String>)=} consoleAPIsToMock
- * 
+ *
  * @return void
  * @api public
  */
+/* eslint-disable-next-line */
 export const provisionMockedJSConsoleLoggingForTests = (
   loggingStrategy = -1,
-  consoleAPIsToMock = ['log', 'warn', 'error', 'assert' ]
+  consoleAPIsToMock = ['log', 'warn', 'error', 'assert']
 ) => {
   /* @CHECK: https://github.com/tschaub/mock-fs/issues/234 */
 
-  function format(entry) {
-    if (typeof entry === "object") {
+  function format (entry) {
+    if (typeof entry === 'object') {
       try {
-        return JSON.stringify(entry);
+        return JSON.stringify(entry)
       } catch (_) {}
     }
 
-    return entry;
+    return entry
   }
 
   let _Console = null
-  let logsBuffer = [];
+  let logsBuffer = []
 
-  function log(currentTestName, type, ...messages) {
+  function log (currentTestName, type, ...messages) {
     const _messages = messages.slice(0)
 
     if (loggingStrategy === $DELAYED_LOGGING) {
       /* @HINT: `loggingStrategy` as Delayed Logging means logs show up after all the tests run */
       logsBuffer.push({ type, testName: currentTestName, messages: _messages })
-      return;
+      return
     }
 
     process.stdout.write(
       /* @HINT: `loggingStrategy` as Compact Logging means logs are less verbose and mostly redacted */
       loggingStrategy === $COMPACT_LOGGING
-        ? `${currentTestName} -> ${type}: [reacted]` + "\n"
-        : _messages.map(format).join(" ") + "\n"
-    );
+        ? `${currentTestName} -> ${type}: [reacted]` + '\n'
+        : _messages.map(format).join(' ') + '\n'
+    )
   }
 
   beforeEach(() => {
     if (typeof window === 'undefined') {
-      const { Console } = global.console;
-      _Console = Console;
+      const { Console } = global.console
+      _Console = Console
 
-      let currentTestName = ""
+      let currentTestName = ''
 
       try {
         /* @HINT: Workaround for Jest v27.x and below */
-        currentTestName = jasmine['currentTest'].fullName;
+        currentTestName = jasmine.currentTest.fullName
       } catch (_) {
         try {
           /* @HINT: Workaround for Jest v28.x and above */
           expect(undefined).to_$et(undefined)
         } catch (error) {
           if (error instanceof TypeError) {
-            currentTestName = error.message;
+            currentTestName = error.message
           }
         } finally {
           currentTestName = expect.getState().currentTestName
@@ -764,8 +937,8 @@ export const provisionMockedJSConsoleLoggingForTests = (
       consoleAPIsToMock.forEach((api) => {
         global.console[api] = jest.fn(
           log.bind(null, currentTestName, api)
-        );
-      });
+        )
+      })
     }
   })
 
@@ -788,30 +961,41 @@ export const provisionMockedJSConsoleLoggingForTests = (
 /**
  * A helper utility that enables the use of environmental variables loaded only for test cases
  *
- * @return void
+ * @return {{ $setEnv_forThisTestSuite: Function }}
  * @api public
  */
-export const provisionEnvironmentalVariablesForTests_withAddons = () => {
+/* eslint-disable-next-line */
+export const provisionEnvironmentalVariablesForTests_withAddons = (resetAfterEach = 1) => {
   /* @CHECK: https://jaketrent.com/post/mock-process-env-jest/ */
-  const ORIGINAL_ENV = process.env
+  const ORIGINAL_ENVS = process.env
 
-  beforeEach(() => { 
-    jest.resetModules()
-    process.env = { ...ORIGINAL_ENV }
+  beforeEach(() => {
+    if (resetAfterEach) {
+      jest.resetModules()
+      process.env = { ...ORIGINAL_ENVS }
+    }
   })
 
   afterEach(() => {
-    process.env = ORIGINAL_ENV
+    if (resetAfterEach) {
+      process.env = ORIGINAL_ENVS
+    }
+  })
+
+  afterAll(() => {
+    if (!resetAfterEach) {
+      process.env = ORIGINAL_ENVS
+    }
   })
 
   return {
-    $setEnv_forThisTestCase: (variableName, variableValue) => {
+    $setEnv_forThisTestSuite: (variableName, variableValue) => {
       if ('replaceProperty' in jest) {
         jest.replaceProperty(
           process,
           'env',
           { [variableName.toUpperCase()]: variableValue }
-        );
+        )
       } else {
         process.env[variableName.toUpperCase()] = variableValue
       }

@@ -62,10 +62,10 @@ export const fakeResizeObserverFactory = () => (function () {
 
         window.setTimeout(() => {
           const direction = window.getComputedStyle(
-            window.document.body
+            window.document.documentElement || window.document.body
           ).direction || 'ltr'
           const writingMode = window.getComputedStyle(
-            window.document.body
+            window.document.documentElement || window.document.body
           )['writing-mode'] || 'horizontal-tb'
 
           if (box === 'content-box' || box === 'device-pixel-content-box') {

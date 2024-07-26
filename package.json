@@ -8,6 +8,7 @@
   "typings": "./types/index.d.ts",
   "files": [
     "examples",
+    ".export",
     "dist",
     "types",
     ".npmignore",
@@ -47,6 +48,8 @@
     "globals": [
       "global",
       "jest",
+      "jasmine",
+      "expect",
       "process",
       "beforeAll",
       "afterAll",
@@ -60,6 +63,57 @@
       "rollup.config.js"
     ]
   },
+  "jest": {
+    "automock": false,
+    "bail": 1,
+    "collectCoverage": true,
+    "verbose": true,
+    "moduleFileExtensions": [
+      "js"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "src"
+    ],
+    "testPathIgnorePatterns": [
+      "!<rootDir>/test"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js}",
+      "!<rootDir>/node_modules/",
+      "!<rootDir>/test"
+    ],
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules/"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 19,
+        "functions": 20,
+        "lines": 40,
+        "statements": 40
+      },
+      "./src/index.js/": {
+        "statements": 12
+      },
+      "./src/eventbus/core.jsx": {
+        "branches": 27,
+        "statements": 42
+      },
+      "./src/fetcher/core.jsx": {
+        "branches": 0,
+        "statements": 10
+      },
+      "./src/utils/core.jsx": {
+        "branches": 22,
+        "statements": 37
+      }
+    },
+    "coverageDirectory": "coverage",
+    "setupFilesAfterEnv": [
+      "./setupTests.js"
+    ]
+  },
   "devDependencies": {
     "@babel/preset-env": "^7.14.1",
     "@rollup/plugin-babel": "^5.3.0",
@@ -70,6 +124,7 @@
     "@types/mock-fs": "4.13.4",
     "jest": "^26.6.3",
     "mock-fs": "5.2.0",
+    "nock": "^13.5.4",
     "prettier": "^1.16.4",
     "rimraf": "^3.0.2",
     "rollup": "^2.47.0",

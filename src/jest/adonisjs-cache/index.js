@@ -1,11 +1,29 @@
 'use strict'
+const isPromise = (object) => {
+  if (typeof object === 'undefined' ||
+    object === null ||
+      !(object instanceof Object)) {
+    return false
+  }
+  return Boolean(
+    (typeof object.then === 'function' || Object.prototype.toString.call(object) === '[object Promise]')
+  )
+}
+
+const isAsync = (callback) => {
+  if (typeof callback !== 'function') {
+    return false
+  }
+  const $string = callback.toString().trim()
+  return Boolean($string.match(/^async /) || callback.constructor.name === 'AsyncFunction')
+}
 
 export const fakeAdonisJSCachePackageFactory = () => (function () {
   return function Cache () {
     return {
       _store: {},
-      async has (key = '') {
-        return Boolean(this._store[key])
+      has (key = '') {
+        return Promise.resolve(Boolean(this._store[key]))
       },
       async add (key = '', val, decayMins) {
         const expires = Math.floor((Date.now() / 1000) + decayMins * 60)
@@ -13,22 +31,32 @@ export const fakeAdonisJSCachePackageFactory = () => (function () {
           data: JSON.stringify(val),
           expiration: expires
         }
+        /* @HINT: Simulate wait time to add data to a fake remote store (e.g. [fake] Redis) */
+        await (new Promise((resolve) => setTimeout(resolve, 500)))
         return true
       },
-      async remember (key = '', decayMins, callBackVal) {
+      async remember (key = '', decayTimeInMins, callback) {
         if ((await this.get(key)) === null) {
-          const expires = Math.floor((Date.now() / 1000) + decayMins * 60)
+          const expires = Math.floor(
+            (Date.now() / 1000) + decayTimeInMins * 60
+          )
+          const result = callback()
           this._store[key] = {
-            data: JSON.stringify((await callBackVal())),
+            data: JSON.stringify(
+              (isAsync(callback) || isPromise(result)
+                ? await result
+                : result
+              )
+            ),
             expiration: expires
           }
         }
         return true
       },
-      async get (key = '', defaultVal = 0) {
+      async get (key = '', defaultValue = 0) {
         const val = this._store[key]
         if (val === undefined) {
-          return defaultVal
+          return defaultValue
         }
         if (Date.now() / 1000 >= val.expiration) {
           await this.forget(key)
@@ -46,19 +74,21 @@ export const fakeAdonisJSCachePackageFactory = () => (function () {
       },
       async flush () {
         const result = this._store = {}
+        /* @HINT: Simulate wait time to flush data from a fake remote store (e.g. [fake] Redis) */
+        await (new Promise((resolve) => setTimeout(resolve, 500)))
         return result !== null
       },
       getPrefix () {
         return ''
       },
       _incrementOrDecrement (key, value, callback) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           const val = this._store[key]
           if (val === undefined) {
             resolve(false)
             return
           }
-          const currentValue = parseInt(val.data)
+          const currentValue = parseInt(val.data || value)
           if (Number.isNaN(currentValue)) {
             resolve(false)
             return
@@ -68,17 +98,19 @@ export const fakeAdonisJSCachePackageFactory = () => (function () {
           resolve(newValue)
         })
       },
-      async increment (key, value = 1) {
+      increment (key, value = 1) {
         return this._incrementOrDecrement(key, value, (currentValue) => {
           return currentValue + value
         })
       },
-      async decrement (key, value = 1) {
+      decrement (key, value = 1) {
         return this._incrementOrDecrement(key, value, (currentValue) => {
           return currentValue + value
         })
       },
       async forget (key = '') {
+        /* @HINT: Simulate wait time to drop a data key from a fake remote store (e.g. [fake] Redis) */
+        await (new Promise((resolve) => setTimeout(resolve, 500)))
         return (delete this._store[key]) !== null
       }
     }

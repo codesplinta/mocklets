@@ -37,11 +37,14 @@ module.exports = {
     signedCookies = {}
   } = {}) => {
     const _headers = Object.assign({}, {
-      "accept": "text/html, application/xhtml+xml, application/xml;q=0.9, image/webp, */*;q=0.8",
-      "accept-encoding": "deflate, gzip;q=1.0, *;q=0.5",
-      "accept-charset": "utf-8, iso-8859-1;q=0.7",
-      "accept-language": "en-US, en;q=0.9, fr;q=0.8, de;q=0.7, *;q=0.5",
-      "content-type": "text/html; charset=utf-8"
+      accept: 'text/html, application/xhtml+xml, application/xml;q=0.9, image/webp, */*;q=0.8',
+      'accept-encoding': 'deflate, gzip;q=1.0, *;q=0.5',
+      'accept-charset': 'utf-8, iso-8859-1;q=0.7',
+      'accept-language': 'en-US, en;q=0.9, fr;q=0.8, de;q=0.7, *;q=0.5',
+      'content-type': 'text/html; charset=utf-8',
+      connection: 'keep-alive',
+      pragma: 'no-cache',
+      'cache-control': 'no-cache'
     }, headers)
     const request = {
       body,
@@ -63,9 +66,9 @@ module.exports = {
       reusedSocket: false
     }
 
-    if (method.toLowerCase() === 'get'
-      || method.toLowerCase() === 'head') {
-      delete _headers["content-type"];
+    if (method.toLowerCase() === 'get' ||
+      method.toLowerCase() === 'head') {
+      delete _headers['content-type']
     }
 
     /* @HINT http.IncomingMessage specific fields */
@@ -119,11 +122,11 @@ module.exports = {
       if (typeof callback === 'function') {
         callback()
       }
-    
+
       this.writableEnded = true
       this.emit('finish', {})
       this.writableFinished = true
-    });
+    })
 
     emitter.getHeaderNames = jest.fn(() => {
       return Object.keys(this.headers)
@@ -134,12 +137,12 @@ module.exports = {
         return
       }
 
-      if (typeof value !== 'string'
-        || typeof value !== 'object') {
+      if (typeof value !== 'string' ||
+        typeof value !== 'object') {
         return
       }
 
-      this.headers[name.toLowerCase()] = value;
+      this.headers[name.toLowerCase()] = value
     }
 
     emitter.destroy = jest.fn(() => {
@@ -148,15 +151,15 @@ module.exports = {
 
       this.destroyed = true
       this.finished = true
-    });
+    })
 
     emitter.removeHeader = jest.fn((name) => {
       if (typeof name !== 'string') {
         return
       }
 
-      delete this.headers[name.toLowerCase()];
-    });
+      delete this.headers[name.toLowerCase()]
+    })
 
     emitter.hasHeader = (name) => {
       if (typeof name !== 'string') {
@@ -191,16 +194,16 @@ module.exports = {
       }
 
       const ranges = []
-      ranges.type = this.headers["accept-ranges"]
+      ranges.type = this.headers['accept-ranges']
       return ranges
     }
 
     emitter.is = (type) => {
-      if (typeof type !== "string") {
+      if (typeof type !== 'string') {
         return
       }
 
-      const requestContentType = this.headers["content-type"]
+      const requestContentType = this.headers['content-type']
       const indexOfWildCard = type.indexOf('*')
 
       if (indexOfWildCard === -1) {
@@ -216,29 +219,29 @@ module.exports = {
           'ig'
         )
       ) !== -1
-    };
-  
-    emitter.acceptsEncodings = (encoding, ) => {
-      if (typeof encoding !== "string") {
+    }
+
+    emitter.acceptsEncodings = (encoding) => {
+      if (typeof encoding !== 'string') {
         return
       }
 
-      const requestEncoding = this.headers["accept-encoding"]
+      const requestEncoding = this.headers['accept-encoding']
       return requestEncoding.includes(encoding)
     }
 
-    emitter.acceptsCharsets = (charset, ) => {
-      if (typeof charset !== "string") {
+    emitter.acceptsCharsets = (charset) => {
+      if (typeof charset !== 'string') {
         return
       }
 
-      const requestCharset = this.headers["accept-charset"]
+      const requestCharset = this.headers['accept-charset']
       return requestCharset.includes(charset)
     }
 
-    emitter.acceptsLanguages = (language, ) => {
-      const requestLanguage = this.headers["accept-language"]
-      if (typeof language === "string") {
+    emitter.acceptsLanguages = (language) => {
+      const requestLanguage = this.headers['accept-language']
+      if (typeof language === 'string') {
         return requestLanguage.includes(language)
       }
     }
@@ -264,7 +267,7 @@ module.exports = {
     locals = {}
   } = {}) => {
     const _headers = Object.assign({}, {
-      "content-type": "application/json; charset=utf-8"
+      'content-type': 'application/json; charset=utf-8'
     },
     headers)
 
@@ -279,7 +282,7 @@ module.exports = {
       writableFinished: false,
       finished: false,
       headersSent: false
-    };
+    }
 
     /* @HINT: http.ServerResponse specific fields */
     /* @CHECK: https://nodejs.org/api/http.html#class-httpserverresponse */
@@ -324,7 +327,7 @@ module.exports = {
         normalizedMimeType = 'text/html'
       }
 
-      const [, match ] = /^(png|jpe?g|gif|svg)$/.exec(
+      const [, match] = /^(png|jpe?g|gif|svg)$/.exec(
         normalizedMimeType
       ) || ['', '']
 
@@ -339,8 +342,8 @@ module.exports = {
       }
 
       this.set(
-        "content-type",
-        "<mime-type>; charset=utf-8".replace(
+        'content-type',
+        '<mime-type>; charset=utf-8'.replace(
           '<mime-type>',
           normalizedMimeType
         )
@@ -348,12 +351,12 @@ module.exports = {
     })
 
     emitter.set = jest.fn((name, value) => {
-      if (typeof name !== "string") {
+      if (typeof name !== 'string') {
         return
       }
 
-      if (typeof value !== 'string'
-        || typeof value !== 'object') {
+      if (typeof value !== 'string' ||
+        typeof value !== 'object') {
         return
       }
 
@@ -361,7 +364,7 @@ module.exports = {
     })
 
     emitter.get = jest.fn((name) => {
-      if (typeof name !== "string") {
+      if (typeof name !== 'string') {
         return
       }
 
@@ -370,12 +373,12 @@ module.exports = {
 
     nonChainableMethods.forEach((method) => {
       emitter[method] = jest.fn(() => (...args) => {
-        let result = undefined;
-        
+        let result
+
         result = method === 'header'
           ? this.get([args[0]])
           : undefined
-        
+
         if (method === 'sendStatus') {
           this.statusCode = typeof args[0] === 'number' ? args[0] : 0
         }

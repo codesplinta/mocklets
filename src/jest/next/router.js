@@ -72,7 +72,7 @@ class Stack {
     const formerTop = this.peek()
     Array.prototype.pop.call(this)
 
-    return formerTop;
+    return formerTop
   }
 
   replaceTop (...args) {
@@ -171,7 +171,12 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     }
     return updatePath(url, options || { shallow: false, scroll: true }, 'push', asPath)
   })
-  const mockRouterReload = jest.fn(() => Promise.resolve(true))
+  const mockRouterReload = jest.fn(() => {
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => window.location.reload(), 0)
+    }
+    return Promise.resolve(true)
+  })
   const mockRouterPrefetch = jest.fn().mockResolvedValue(true)
   const mockRouterReplace = jest.fn((url, asPath, options) => {
     if (typeof asPath !== 'string' && typeof options === 'undefined') {
@@ -187,7 +192,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     return updatePath(url, options || { shallow: false, scroll: true }, 'replace', asPath)
   })
 
-  let _beforePopStateCallback = () => false
+  const _beforePopStateCallback = () => false
   let _query = {}
   let _hash = ''
   let routingHistoryList = new Stack([])
@@ -196,7 +201,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
   const emitter = mitt(eventsMap)
 
   const reduceUrlToQueryString = (url) => {
-    return (url || "").slice((url || "").indexOf('?')).slice(
+    return (url || '').slice((url || '').indexOf('?')).slice(
       1
     ).split(
       '&'
@@ -205,15 +210,16 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     }).reduce((queryPairMap, previousQuerySlicePair) => {
       const [key, value] = previousQuerySlicePair
       queryPairMap[key] = decodeURIComponent(value).includes(',')
-        ? values.split(',') : value
+        ? value.split(',')
+        : value
       return queryPairMap
     }, {})
   }
 
   const removeTrailingSlashOnPathname = (pathname) => {
-    return pathname.endsWith("/") && pathname.length > 1
+    return pathname.endsWith('/') && pathname.length > 1
       ? pathname.slice(0, -1)
-      : pathname || "/";
+      : pathname || '/'
   }
 
   const stringifyFromQueryObjects = (sourceQuery, targetQuery = {}) => {
@@ -223,30 +229,30 @@ export const nextJSuseRouter = (eventsMap = {}) => {
       sourceQuery
     ).forEach(([key, value]) => {
       const isQueryValueArray = Array.isArray(value)
-    
-      queryString += 
+
+      queryString +=
         isQueryValueArray
           ? `${key}=${encodeURIComponent(value.join(','))}&`
           : `${key}=${encodeURIComponent(value)}&`
-      
+
       targetQuery[key.toString()] = isQueryValueArray ? value : value?.toString()
     })
 
-    return { queryString: queryString.slice(1, -1) };
+    return { queryString: queryString.slice(1, -1) }
   }
 
   const normalizeAsRouteFromUrl = (url, previousPathname, previousQuery, asPath) => {
-    let _asPath = asPath;
+    let _asPath = asPath
 
     if (!_asPath) {
       _asPath = removeTrailingSlashOnPathname(url.pathname || previousPathname)
     }
 
     const $query = { ...previousQuery }
-    const queryStringFromUrl = typeof url.search === 'string' && url.search.length > 0 
-      ? reduceUrlToQueryString("/"+url.search)
+    const queryStringFromUrl = typeof url.search === 'string' && url.search.length > 0
+      ? reduceUrlToQueryString('/' + url.search)
       : {}
-    const hasQueryObject = typeof url.query === 'object' && url !== null && url.query !== null;
+    const hasQueryObject = typeof url.query === 'object' && url !== null && url.query !== null
     const allQuery = Object.assign({}, queryStringFromUrl, hasQueryObject ? url.query : {})
     const asPathIsDynamicRoute = _asPath.indexOf('[') !== -1 && _asPath.indexOf(']') !== -1
 
@@ -282,26 +288,27 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     /*! attribution */
     /* @CHECK: https://github.com/scottrippey/next-router-mock/blob/main/src/MemoryRouter.tsx#L266C10-L266C34 */
 
-    const isHashChange = previousRoute.hash !== currentRoute.hash;
-    const isQueryChange = stringifyFromQueryObjects(previousRoute.query).queryString 
-      !== stringifyQueryString(currentRoute.query).queryString;
-    const isRouteChange = isQueryChange || previousRoute.pathname !== currentRoute.pathname;
+    const isHashChange = previousRoute.hash !== currentRoute.hash
+    const isQueryChange = stringifyFromQueryObjects(previousRoute.query).queryString !==
+      stringifyFromQueryObjects(currentRoute.query).queryString
+    const isRouteChange = isQueryChange || previousRoute.pathname !== currentRoute.pathname
 
     /**
      * @HINT: Try to replicate NextJs routing behaviour:
      *
-     * /foo       -> routeChange
-     * /foo#baz   -> hashChange
-     * /foo#baz   -> hashChange
-     * /foo       -> hashChange
-     * /foo       -> routeChange
-     * /bar#fuz   -> routeChange
+     * /abc       -> routeChange
+     * /abc#cba   -> hashChange
+     * /abc#cba   -> hashChange
+     * /abc       -> hashChange
+     * /abc       -> routeChange
+     * /bde#fuz   -> routeChange
      */
-    return !isRouteChange && (isHashChange || currentRoute.hash);
+    return !isRouteChange && (isHashChange || currentRoute.hash)
   }
 
   const updatePath = async (url, { shallow = false, scroll = true, locale }, action, asPath) => {
-    const isURL_OfType_String = typeof url === 'string';
+    /* eslint-disable-next-line */
+    const isURL_OfType_String = typeof url === 'string'
     const previousRoute = {
       query: routerFields.query,
       hash: _hash,
@@ -311,11 +318,15 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     let $asPath = asPath || ''
     let normalizedRoute = { asPath, query: _query, hash: _hash, pathname: '' }
 
+    /* eslint-disable-next-line */
     if (isURL_OfType_String) {
-      /* @HINT: A ficticious `base` url is added to avoid `Invalid URL` type error */
+      /* @HINT:
+       *
+       * A ficticious `base` url is added to avoid `Invalid URL` type error
+       */
       const $url = new URL(
         url,
-        'https://xl2.com'
+        'https://xle.com'
       )
 
       normalizedRoute = normalizeAsRouteFromUrl(
@@ -337,7 +348,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
       routerFields.locale = locale
     }
 
-    let shouldTriggerHashChangeEvent = detectHashChangeFromRouteAction(
+    const shouldTriggerHashChangeEvent = detectHashChangeFromRouteAction(
       previousRoute,
       normalizedRoute
     )
@@ -356,12 +367,12 @@ export const nextJSuseRouter = (eventsMap = {}) => {
           ? Object.assign(
               {},
               { query: normalizedRoute.query },
-              (new URL(url, 'https://xl2.com'))
+              (new URL(url, 'https://xle.com'))
             )
           : url,
         asPath: $asPath,
         options: { shallow, scroll, locale }
-      };
+      }
 
       switch (action) {
         case 'push':
@@ -370,13 +381,15 @@ export const nextJSuseRouter = (eventsMap = {}) => {
           )
           break
         default:
-          routingHistoryList.replaceTop(
-            routingHistoryEntry
-          )
-          routingHistoryListShiftBuffer = new BasicStack([])
+          if (action === 'replace') {
+            routingHistoryList.replaceTop(
+              routingHistoryEntry
+            )
+            routingHistoryListShiftBuffer = new BasicStack([])
+          }
       }
 
-      /* @HINT: Update to current route fields */ 
+      /* @HINT: Update to current route fields */
       _query = normalizedRoute.query
       _hash = normalizedRoute.hash
 
@@ -419,9 +432,9 @@ export const nextJSuseRouter = (eventsMap = {}) => {
       window.addEventListener('popstate', () => setTimeout(() => {
         const currentPathname = window.location.pathname
         const currentSearch = window.location.search
-        const currentHash = winddow.location.hash
+        const currentHash = window.location.hash
 
-        const historyStack = routingHistoryList.clone()
+        let historyStack = routingHistoryList.clone()
 
         if (historyStack.isEmpty()) {
           return
@@ -436,16 +449,16 @@ export const nextJSuseRouter = (eventsMap = {}) => {
           return
         }
 
-        if (currentPathname === topRoutingPathHistoryEntry.url.pathname
-            || currentSearch === topRoutingPathHistoryEntry.url.search
-              || currentHash  === topRoutingPathHistoryEntry.url.hash) {
+        if (currentPathname === topRoutingPathHistoryEntry.url.pathname ||
+            currentSearch === topRoutingPathHistoryEntry.url.search ||
+              currentHash === topRoutingPathHistoryEntry.url.hash) {
           mockRouterBack()
         } else {
           mockRouterForward()
         }
       }))
     }
-    _beforepPopStateCallback = callback
+    _beforePopStateCallback = callback
   })
 
   const routerFields = {
@@ -463,7 +476,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     forward: mockRouterForward,
     back: mockRouterBack,
     reload: mockRouterReload,
-    refresh: jest.fn(),
+    refresh: jest.fn(() => undefined),
     prefetch: mockRouterPrefetch,
     replace: mockRouterReplace,
     events: {

@@ -1,6 +1,14 @@
 // Type definitions for mocklets v0.0.6
 // Project: https://github.com/codesplinta/mocklets
 
+import { VirtualConsole } from 'jsdom';
+
+declare global {
+  interface Window {
+    _virtualConsole: VirtualConsole;
+  }
+}
+
 interface Timekeeper {
   freeze(date?: Date | number | string): void;
   travel(date?: Date | number | string): void;
@@ -74,12 +82,42 @@ declare module 'mocklets' {
  */
   export function provisionFakeBrowserResizeObserverForTests(): void;
 /**
+ * A helper utility that enables the use of fake browser API: `window.matchMedia` within tests
+ *
+ * @return void
+ * @api public
+ */
+  export function provisionFakeBrowserMatchMediaForTests(): void;
+/**
+ * A helper utility that enables the use of fake browser API: `window` URI-based APIs within tests
+ *
+ * @return {{ $setWindowOrigin_forThisTestCase: Function }}
+ * @api public
+ */
+ export function provisionFakeBrowserURILocationForTests_withAddons(): {
+  $setWindowOrigin_forThisTestCase (newOrigin: string): void;
+ }
+/**
+ * A helper utility that enables the use of mock i18n for ReactJS: `react-i18next` within tests
+ *
+ * @return void
+ * @api public
+ */
+  export function provisionMockedReacti18NextForTests(translationMapCallback: () => Record<string, string>): void;
+/**
  * A helper utility that enables the use of mock NextJS router package within tests
  *
  * @return void
  * @api public
  */
   export function provisionMockedNextJSRouterForTests(): void;
+/**
+ * A helper utility that enables the use of mock Material UI kit: `@mui/material` within tests
+ * 
+ * @return void
+ * @api public
+ */
+  export function provisionMockedMaterialUIKitForTests(): void;
 /**
  * A helper utility that enables the use of mock NextJS router package within tests that returns addons
  *
@@ -89,8 +127,11 @@ declare module 'mocklets' {
  * @api public
  */
   export function provisionMockedNextJSRouterForTests_withAddons(clearAfterEach?: 1 | 0): {
-    $getAllRouterEventsMap(): Record<import('.next/router').RouterEvent, -1 | 1>,
-    $setSpyOn_useRouter(): () => import('.next/router').NextRouter,
+    $getAllRouterEventsMap(): Record<import('.next/router').RouterEvent, -1 | 1>;
+    $setSpyOn_useRouter(nextRouter: {
+      useRouter():import('.next/router').NextRouter,
+      withRouter(): {}
+    }): () => import('.next/router').NextRouter;
     $setSpyOn_useRouter_withReturnValueOnce(
       options: {
         pathname: string,
@@ -98,7 +139,12 @@ declare module 'mocklets' {
         isPreview?: boolean,
         basePath?: string,
         query?: Record<string, string | string[]>
-      }
+      },
+      nextRouter?: {
+        useRouter(): import('.next/router').NextRouter,
+        withRouter(): {}
+      },
+      nextNavigation?: {}
     ): import('.next/router').NextRouter
   }
 /**
@@ -173,11 +219,11 @@ declare module 'mocklets' {
 /**
  * A helper utility that enables the use of environmental variables loaded only for test cases
  *
- * @return void
+ * @return {{ $setEnv_forThisTestSuite: Function }}
  * @api public
  */
   export function  provisionEnvironmentalVariablesForTests_withAddons(): {
-    $setEnv_forThisTestCase(variableName: string, variableValue: string): void;
+    $setEnv_forThisTestSuite(variableName: string, variableValue: string): void;
   }
 
 /**

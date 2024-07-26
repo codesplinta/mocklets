@@ -51,7 +51,7 @@ declare module '.next/router' {
     isFallback: boolean;
     isPreview: boolean;
     asPath: string;
-    route: string;
+    route?: string;
     query: ParsedUrlQuery;
     locale?: string;
     locales?: string[] | undefined;

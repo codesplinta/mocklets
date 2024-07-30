@@ -3,7 +3,8 @@ import { fakeReactHookFormPackageFactory } from './src/jest/react-hook-form'
 import { fakeReacti18NextPackageFactory } from './src/jest/react-i18next'
 import { fakePinoLoggerPackageFactory } from './src/jest/pino'
 import { fakeWinstonLoggerPackageFactory } from './src/jest/winston'
-// import { fakeCloudinaryUploaderInstanceFactory } from './src/jest/cloudinary'
+import { fakeCloudinaryUploaderInstanceFactory } from './src/jest/cloudinary'
+import { fakeWebSocketFactory } from './src/jest/WebSocket'
 import { fakeMaterialUIKitPackageFactory } from './src/jest/@mui/material'
 import { fakeNextJSRouterPackageFactory } from './src/jest/next/router'
 import { fakeAdonisJSCachePackageFactory } from './src/jest/adonisjs-cache'
@@ -12,7 +13,7 @@ import { fakeIntersectionObserverFactory } from './src/jest/IntersectionObserver
 import { fakeResizeObserverFactory } from './src/jest/ResizeObserver'
 import { fakeStorageInstanceFactory } from './src/jest/browserStorage'
 
-import * as jsdom from 'jsdom'
+// import { afterEach, beforeEach, afterAll } from '@jest/globals'
 
 const $fixtures = require('./src/jest/__fixtures__')
 const {
@@ -42,6 +43,7 @@ const $COMPACT_LOGGING = 3
  * @throws {Error}
  *
  * @returns void
+ * @private
  */
 function assertReadonlyGlobalsNotMutable (property) {
   const readOnlyGlobalObjects = [
@@ -50,8 +52,7 @@ function assertReadonlyGlobalsNotMutable (property) {
     'clientInformation',
     'caches',
     'closed',
-    'crypto',
-    'fetch'
+    'crypto'
   ]
 
   if (readOnlyGlobalObjects.includes(property)) {
@@ -69,8 +70,15 @@ function assertReadonlyGlobalsNotMutable (property) {
  * @param {*} fakeOrMock
  *
  * @returns void
+ * @private
  */
 const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
+  const isJSDOMLoaded = typeof window !== 'undefined' ? window.navigator.noUI : false
+
+  if (!isJSDOMLoaded) {
+    return
+  }
+
   const { [property]: originalProperty } = window
   const isWindowLocation = property === 'location'
 
@@ -125,7 +133,7 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
             return parser[prop]
           },
           set: function (value) {
-            let currentURL = new URL(location)
+            let currentURL = new window.URL(location)
 
             if (prop === 'href') {
               location = value.indexOf('http') === 0
@@ -137,7 +145,7 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
             }
 
             if (prop === 'origin') {
-              throw new TypeError('Cannot redefine property: origin')
+              throw new window.TypeError('Cannot redefine property: origin')
             }
 
             currentURL[prop] = value
@@ -203,6 +211,7 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
  * @param {*} fakeOrMock
  *
  * @returns void
+ * @private
  */
 const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
   if (typeof fakeOrMock === 'function') {
@@ -435,14 +444,11 @@ export const provisionFakeBrowserURILocationForTests_withAddons = () => {
         return
       }
 
-      if (jsdom && typeof jsdom.changeURL === 'function') {
-        jsdom.changeURL(window, newOrigin)
-      } else {
-        const [protocol, hostname] = newOrigin.trim().split('//')
+      //jsdom.changeURL(window, newOrigin)
+      const [protocol, hostname] = newOrigin.trim().split('//')
 
-        window.location.protocol = protocol || 'http:'
-        window.location.hostname = hostname
-      }
+      window.location.protocol = protocol || 'http:'
+      window.location.hostname = hostname
     }
   }
 }
@@ -488,6 +494,19 @@ export const provisionMockedAdonisJSv4CacheForTests = () => {
 }
 
 /**
+ * A helper utility that enables the use of mock `cloudinary.v2` package : require('cloudinary').v2 within tests
+ *
+ * @return void
+ * @api public
+ */
+export const provisionMockedNodeJSCloudinaryForTests = () => {
+  const cloudinary = fakeCloudinaryUploaderInstanceFactory()
+  const v2 = jest.spyOn(require('cloudinary'), 'v2')
+
+  v2.mockReturnValueOnce(cloudinary.v2)
+}
+
+/**
  * A helper utility that enables the use of mock NextJS router package within tests
  *
  * @return void
@@ -499,7 +518,7 @@ export const provisionMockedNextJSRouterForTests = () => {
     ___eventsSubscribed
   )
 
-  /* @HINT: This doesn't work for now */
+  /* @NOTE: This doesn't work for now */
   provisionFakeJSObject(
     'next/router',
     routerFactory
@@ -525,7 +544,7 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
     ___eventsSubscribed
   )
 
-  /* @HINT: This doesn't work for now */
+  /* @NOTE: This doesn't work for now */
   provisionFakeJSObject(
     'next/router',
     routerFactory
@@ -575,11 +594,11 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
       $routerFields.basePath = basePath
       $routerFields.isPreview = isPreview
 
-      const returnValue = {
-        ...$routerFields
-      }
+      // const returnValue = {
+      //   ...$routerFields
+      // }
 
-      useRouter.mockReturnValueOnce(returnValue)
+      useRouter.mockReturnValueOnce($routerFields)
 
       usePathname.mockImplementationOnce(() => {
         return $routerFields.asPath
@@ -595,7 +614,7 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
         return new URLSearchParams(router.query)
       })
 
-      return returnValue
+      return $routerFields // returnValue
     }
   }
 }
@@ -610,39 +629,46 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
 export const provisionMockedReactHookFormForTests_withAddons = () => {
   const hookFormFactory = fakeReactHookFormPackageFactory()
 
-  /* @HINT: This doesn't work for now */
+  /* @NOTE: This doesn't work for now */
   provisionFakeJSObject(
     'react-hook-form',
     hookFormFactory()
   )
 
   return {
-    $setSpyOn_useFormContext: (reactHookFormExportObject) => {
+    $setSpyOn_useForm: (reactHookFormExportObject) => {
       return jest.spyOn(
-        reactHookFormExportObject || require('react-hook-form'), 'useFormContext')
+        reactHookFormExportObject || require('react-hook-form'), 'useForm'
+      )
     },
-    $setSpyOn_useFromContext_withReturnValueOnce: ({
-      formState = {},
+    $setSpyOn_useFrom_withReturnValueOnce: ({
+      formStateErrors = {},
       values = {}
     }, reactHookFormExportObject
     ) => {
-      const useFormContext = jest.spyOn(
+      const useForm = jest.spyOn(
         reactHookFormExportObject || require('react-hook-form'),
-        'useFormContext'
+        'useForm'
       )
 
-      const $formContextFields = (hookFormFactory().useFormContext())
+      const $formContextFields = (hookFormFactory().useForm({ defaultValues: values }))
 
-      $formContextFields.formState = formState
-      $formContextFields._value = values
+      $formContextFields.clearErrors()
+      $formContextFields.reset(values)
 
-      const returnValue = {
-        ...$formContextFields
-      }
+      Object.keys(values).forEach((fieldName) => {
+        if (fieldName in formStateErrors) {
+          $formContextFields.setError(fieldName, formStateErrors[fieldName])
+        }
+      })
 
-      useFormContext.mockReturnValueOnce(returnValue)
+      // const returnValue = {
+      //   ...$formContextFields
+      // }
 
-      return returnValue
+      useForm.mockReturnValueOnce($formContextFields)
+
+      return $formContextFields // returnValue
     }
   }
 }
@@ -668,7 +694,7 @@ export const provisionMockedMaterialUIKitForTests = () => {
  * @api public
  */
 export const provisionMockedPinoLoggerForTests = () => {
-  /* @HINT: This doesn't work for now */
+  /* @NOTE: This doesn't work for now */
   provisionFakeJSObject(
     'pino',
     fakePinoLoggerPackageFactory()
@@ -682,7 +708,7 @@ export const provisionMockedPinoLoggerForTests = () => {
  * @api public
  */
 export const provisionMockedWinstonLoggerForTests = () => {
-  /* @HINT: This doesn't work for now */
+  /* @NOTE: This doesn't work for now */
   provisionFakeJSObject(
     'winston',
     fakeWinstonLoggerPackageFactory()
@@ -726,7 +752,7 @@ export const provisionMockedReacti18NextForTests = (translationMapCallback = () 
  *
  * @param {Function} mockFactoryCallback
  *
- * @return typeof import('mock-fs')
+ * @return {{ nodeFileSystemMock: Object }}
  * @api public
  */
 export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = () => undefined) => {
@@ -748,6 +774,10 @@ export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = ()
     if (mock) {
       mock.restore()
     }
+  })
+
+  beforeEach(() => {
+    mock = require('mock-fs')
 
     if (typeof mockFactoryCallback === 'function') {
       mockFactoryCallback(mock, require('path'), require)
@@ -763,7 +793,58 @@ export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = ()
     global.console = $console
   })
 
-  return mock
+  return {
+    get nodeFileSystemMock () {
+      return mock
+    }
+  }
+}
+
+/**
+ * A helper utility that enables the use of `window.WebSocket` and a mock server for test cases
+ *
+ * @param {String} webSocketServerUrl
+ * @param {Function} mockFactoryCallback
+ *
+ * @return {{ webSocketServerMock: Object }}
+ * @api public
+ */
+export const provisionMockedWebSocketClientAndServerForTests = (webSocketServerUrl, mockFactoryCallback) => {
+  let server = null
+
+  let [_server, WebSocket] = fakeWebSocketFactory(webSocketServerUrl)
+
+  provisionFakeWebPageWindowObject(
+    'WebSocket',
+    WebSocket
+  )
+
+  if (typeof mockFactoryCallback === 'function') {
+    server = _server
+    mockFactoryCallback(server)
+  }
+
+  afterEach(() => {
+    server = null
+  })
+
+  beforeEach(() => {
+    if (typeof mockFactoryCallback === 'function') {
+      [server] = fakeWebSocketFactory(webSocketServerUrl)
+      mockFactoryCallback(server)
+    }
+  })
+
+  afterAll(() => {
+    server = null
+    _server = null
+  })
+
+  return {
+    get webSocketServerMock () {
+      return server
+    }
+  }
 }
 
 /**
@@ -927,7 +1008,7 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
 /* eslint-disable-next-line */
 export const provisionMockedJSConsoleLoggingForTests = (
   loggingStrategy = -1,
-  consoleAPIsToMock = ['log', 'warn', 'error', 'assert']
+  consoleAPIsToMock = ['log', 'info', 'error', 'assert']
 ) => {
   /* @CHECK: https://github.com/tschaub/mock-fs/issues/234 */
 
@@ -956,7 +1037,7 @@ export const provisionMockedJSConsoleLoggingForTests = (
     process.stdout.write(
       /* @HINT: `loggingStrategy` as Compact Logging means logs are less verbose and mostly redacted */
       loggingStrategy === $COMPACT_LOGGING
-        ? `${currentTestName} -> ${type}: [reacted]` + '\n'
+        ? `${currentTestName} -> ${type}: [redacted]` + '\n'
         : _messages.map(format).join(' ') + '\n'
     )
   }

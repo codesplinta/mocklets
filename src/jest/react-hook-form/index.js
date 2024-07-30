@@ -46,7 +46,7 @@ export const fakeReactHookFormPackageFactory = () => {
   let _submitCount = 0
 
   const mockController = () => {
-    return <></>
+    return {}// <></>
   }
 
   return () => ({
@@ -358,7 +358,7 @@ export const fakeReactHookFormPackageFactory = () => {
             delete _defaultValues[fieldName]
           }
         }),
-        trigger: jest.fn(),
+        trigger: jest.fn(() => ({})),
         unregister: jest.fn(() => {
           _registeredFields = {}
         }),

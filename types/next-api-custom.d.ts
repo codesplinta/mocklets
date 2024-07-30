@@ -1,8 +1,10 @@
+
+/// <reference types="node" />
+
+import { ParsedUrlQuery } from 'querystring';
+import { IncomingMessage, ServerResponse } from 'http';
+
 declare module '.next/api' {
-    /// <reference types="node" />
-    import { ParsedUrlQuery } from 'querystring';
-    import { IncomingMessage, ServerResponse } from 'http';
-    
     export type PreviewData = string | false | object | undefined
 
     /**

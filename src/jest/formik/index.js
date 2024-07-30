@@ -35,6 +35,7 @@ export const fakeFormikReactPackageFactory = () => {
   let _values = {}
   let _submitCount = 0
   let _isSubmitting = false
+
   const _isValidating = false
 
   const originalModule = jest.requireActual('formik')

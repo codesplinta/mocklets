@@ -37,6 +37,12 @@ You can use mocklets inside your jest test suite files simply by importing into 
 
 It is important to note that when [Kl](https://tigeroakes.com/posts/jest-mock-and-import-statements/)
 
+## Avoiding Mocks
+
+The philosophy which **mocklets** operates on is that of avoiding mocks ([test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) that have no implementation) for as long as possible before choosing them as a last resort. For **mocklets**, the real implementation (and interface) is prefered first. Where it is impractical to use the real implmentation and interface then, fakes ([test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) that have implementation) are prefered.
+
+This layers of preference is due to the fact that tests have much hgher reliability when either the real implementation or a fake implmentation is used when testing.
+
 ## Some Basic Example (on the browser)
 >src/greetingMaker/index.js
 ```js
@@ -118,7 +124,7 @@ Below are some more ways you can use `mocklets`.
 ```js
 module.exports = function (req, res, next) {
   const options = {
-    root: path.join(__dirname, 'public'),
+    root: path.join(process.cwd(), '..',  'public'),
     dotfiles: 'deny',
     headers: {
       'x-timestamp': Date.now(),
@@ -181,9 +187,9 @@ jest.mock('fs', () => ({
  * Always remember, {mocklets} requires the 'fs'
  * module hoisted (as above) !!
  */
-provisionMockedNodeJSFileSystemForTests((mock, path, require) => {
-  const expressJSPublicFolderPath = require.resolve(
-    path.join(__dirname, '../../../../public')
+provisionMockedNodeJSFileSystemForTests((mock, path) => {
+  const expressJSPublicFolderPath = path.resolve(
+    path.join(__dirname, '../../../../'), 'public'
   )
 
   mock({
@@ -229,7 +235,7 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
   * You'll still be able to see them all in time
   * however, only after the test case has run.
   * 
-  * Here, we'll be mocking/faking only `console.log()`
+  * Here, we'll be mocking/faking ONLY `console.log()`
   */
   provisionMockedJSConsoleLoggingForTests(
     $EXECUTION.DELAYED_LOGGING,
@@ -259,12 +265,15 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
            * (on purpose)
            */
           name: 'open-spacey'
-        }
+        },
       })
       const res = getTestFixture('expressHttpResponse', {
         locals: {
           id: '273993'
-        }
+        },
+        cookies: [
+          '__user_id=ajdjH34u774GDye8w3004993; Path=/; Secure=true; httpOnly' 
+        ]
       })
       const nextErrorSpy = jest.fn()
       const next = getTestFixture('expressNext',  nextErrorSpy)
@@ -556,6 +565,9 @@ import {
 import MyArticleComponentUsingNextRouter from '../../pages/blog/article/[articleId]';
 import { dummyArticleId } from '../__fixtures__/forArticles';
 
+jest.mock('next/router', () => ({
+  ...jest.requireActual('next/router')
+}))
 
 describe('Test article page for my blog', () => {
 

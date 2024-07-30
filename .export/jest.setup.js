@@ -1,3 +1,6 @@
+// https://github.com/jsdom/jsdom/issues/1724
+import 'whatwg-fetch';
+
 // There should be a single listener which simply prints to the
 // console. We will wrap that listener in our own listener.
 const listeners = window._virtualConsole.listeners('jsdomError');

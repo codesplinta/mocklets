@@ -444,7 +444,7 @@ export const provisionFakeBrowserURILocationForTests_withAddons = () => {
         return
       }
 
-      //jsdom.changeURL(window, newOrigin)
+      // jsdom.changeURL(window, newOrigin)
       const [protocol, hostname] = newOrigin.trim().split('//')
 
       window.location.protocol = protocol || 'http:'

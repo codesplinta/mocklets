@@ -2,13 +2,15 @@
 
 # mocklets
 
-Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for [**Jest**](https://jestjs.io/).
+Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for [**Jest**](https://jestjs.io/). This library creates a seamless bridge between **Jest**, **JSDOM** and **Popular thrid-party JS libraries** (e.g. Nextjs, react-hook-form, ExpressJS e.t.c ) used for building apps such that you don't have to think about how and what you need/require to setup your testing space to write tests.
+
+You can now write your **Jest** tests a lot more faster and better than before.
 
 ## Motivation
 
 Everyone knows how hard software testing setup can be. When it comes to the [testing pyramid](https://www.perfecto.io/blog/testing-pyramid) or [testing polygon](https://example.com), the most amount of work to be done is in creating fixtures (like mocks and fakes) and it can be quite daunting.
 
-The very popular testing frameworks for unit testing and e-to-e tests are good at providing certain building blocks for creating mocks/fakes but how often do we have to rebuild/reconstruct the same building blocks to create the same exact [test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) (e.g. mocks/stubs(spies)/fakes) for different JavaScript software projects ?
+The very popular testing frameworks for unit testing and e-to-e tests are good at providing certain building blocks for creating mocks/fakes but how often do we have to rebuild/reconstruct the same building blocks to create the same exact (usually from scratch) materials in each test suite in order to make [test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) (e.g. mocks/stubs(spies)/fakes) available for different JavaScript software projects ?
 
 This is where **mocklets** come in.
 
@@ -33,10 +35,87 @@ Or install using `yarn`
 
 ## Getting Started
 
-You can use mocklets inside your jest test suite files simply by importing into these files and calling the functions outside or within the `describe()` callback. You can also make addditional calls within any of `test()` callbacks.
+You can use mocklets inside your jest test suite files simply by importing into these files and calling the functions outside or within the `describe()` callback. You can also make addditional calls within any of `test()` and/or `it()` callbacks.
 
-It is important to note that when [Kl](https://tigeroakes.com/posts/jest-mock-and-import-statements/)
+It is important to note that [**Jest module hoisting**](https://tigeroakes.com/posts/jest-mock-and-import-statements/) is still necessary for **mocklets** to work properly. 
 
+For instance, we can simply hoist **React** in **Jest** by doing this:
+
+```ts
+import { useRef } from 'react';
+
+jest.mock('react', () => ({
+  ...jest.requireActual('react')
+}));
+
+// see: https://stackoverflow.com/a/52366601
+const $useRef = <jest.Mock<typeof useRef>>jest.fn(() => ({}))
+```
+
+In the same vein, we can also hoist **react-hook-form** (when using **mocklets**) by doing this too:
+
+```tsx
+import type { UseFormReturn, SubmitHandler } from 'react-hook-form';
+import { render, fireEvent } from '@testing-library/react';
+import {
+  provisionMockedReactHookFormForTests_withAddons
+} from 'mocklets'
+
+import Form from '../src/components/UI/regions/Form';
+
+import { toBeArray, toBeEmpty } from 'jest-extended';
+expect.extend({ toBeArray, toBeEmpty });  
+
+jest.mock('react-hook-form', () => ({
+  ...jest.requireActual('react-hook-form')
+}))
+
+const stubSubmit = jest.fn() as unknown as SubmitHandler<{ id: number }>;
+
+describe('Tests for my custom React form', () => {
+
+  const {
+    $setSpyOn_useForm_withMockImplementation
+  } = provisionMockedReactHookFormForTests_withAddons()
+
+  beforeEach(() => {
+    if ('mockClear' in stubSubmit
+      && typeof stubSubmit['mockClear'] === 'function') {
+      stubSubmit['mockClear']();
+    }
+  });
+
+  it('should render the form', () => {
+    const { getByTestId } = render(
+      <Form onSubmit={stubSubmit} />
+    );
+
+    const form = getByTestId("my-form")
+
+    expect(form).toBeInTheDocument()
+  })
+
+  it('should submit the form',  () => {
+    const { formState }: UseFormReturn = $setSpyOn_useForm_withMockImplementation({
+      options: {
+        values: {
+          id: 345458
+        }
+      }
+    });
+    const { getByTestId } = render(
+      <Form onSubmit={stubSubmit} />
+    );
+
+    const submitButton = getByTestId('submitbutton')
+
+    fireEvent.click(submitButton);
+
+    expect(formState.errors).not.toBeEmpty();
+    expect(stubSubmit).not.toHaveBeenCalled();
+  })
+})
+```
 ## Avoiding Mocks
 
 The philosophy which **mocklets** operates on is that of avoiding mocks ([test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) that have no implementation) for as long as possible before choosing them as a last resort. For **mocklets**, the real implementation (and interface) is prefered first. Where it is impractical to use the real implmentation and interface then, fakes ([test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) that have implementation) are prefered.
@@ -184,7 +263,7 @@ jest.mock('fs', () => ({
  *
  * Mocking/Faking the filesystem (in memory)
  * 
- * Always remember, {mocklets} requires the 'fs'
+ * Always remember, #{mocklets} requires the 'fs'
  * module hoisted (as above) !!
  */
 provisionMockedNodeJSFileSystemForTests((mock, path) => {
@@ -216,8 +295,6 @@ provisionMockedNodeJSFileSystemForTests((mock, path) => {
  */
 import getFile from '../../getFile';
 
-
-
 describe('Testing `getFile()` ExpressJS app controller action', () => {
  /* @HINT
   *
@@ -225,6 +302,7 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
   * from here ( i.e. `getTextFixtures(...)` ).
   */
   const { getTestFixtures } = provisionFixturesForTests_withAddons()
+
  /* @HINT:
   *
   * 
@@ -233,9 +311,12 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
   * The 'Delayed Logging' strategy will still push your logs to the console.
   * 
   * You'll still be able to see them all in time
-  * however, only after the test case has run.
+  * however, only after all the test case has run.
   * 
   * Here, we'll be mocking/faking ONLY `console.log()`
+  * 
+  * We can fake more if we want by just adding it to the
+  * array: [ 'log', 'warn', 'error' ]
   */
   provisionMockedJSConsoleLoggingForTests(
     $EXECUTION.DELAYED_LOGGING,
@@ -257,13 +338,13 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
     () => {
       /* @NOTE: Arrange */
       const req  = getTestFixture('expressHttpRequest', {
+        /* @HINT:
+         *
+         * 
+         * Misspell the name of the file as http request params
+         * (on purpose)
+         */
         params: {
-          /* @HINT:
-           *
-           * 
-           * Misspell the name of the file as http request params
-           * (on purpose)
-           */
           name: 'open-spacey'
         },
       })
@@ -272,7 +353,7 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
           id: '273993'
         },
         cookies: [
-          '__user_id=ajdjH34u774GDye8w3004993; Path=/; Secure=true; httpOnly' 
+          '__user_id=ajdjH34u774GDye8w3004993; Path=/; Secure; HttpOnly; SameSite=None;' 
         ]
       })
       const nextErrorSpy = jest.fn()
@@ -570,29 +651,50 @@ jest.mock('next/router', () => ({
 }))
 
 describe('Test article page for my blog', () => {
-
+  
+  /* @HINT:
+   * 
+   * Create a factory for Next.js
+   * fake `useRouter()` hook that has Jest
+   * stub as part of the return object
+   * that can record imperative calls.
+   */
   const { 
     $setSpyOn_useRouter_withReturnValueOnce
   } = provisionMockedNextJSRouterForTests_withAddons();
+
+  /* @HINT:
+   * 
+   * Create a setter for `process.env`
+   * variables that make it easy to 
+   * create test-only values for any
+   * environmental variable.
+   */
   const {
     $setEnv_forThisTestSuite
   } = provisionEnvironmentalVariablesForTests_withAddons(
     $EXECUTION.IGNORE_RESET_AFTER_EACH_TEST_CASE
   );
 
+  /* @HINT:
+   *
+   * Create a fkae for the Next.js env variable:
+   * 
+   * NEXT_PUBLIC_API_URL
+   */
   $setEnv_forThisTestSuite('NEXT_PUBLIC_API_URL', 'http://localhost:3000/');
-
 
 
   it('should navigate to edit-article page', async () => {
     /* @NOTE: Arrange */
+
+    /* @HINT: Create a Jest fake for Next.js `useRouter()` hook */
     const { push }: NextRouter = $setSpyOn_useRouter_withReturnValueOnce(
       {
         query: {
           id: dummyArticleId
         },
-      },
-      router
+      }
     );
 
     /* @NOTE: Arrange */
@@ -624,8 +726,7 @@ describe('Test article page for my blog', () => {
           id: dummyArticleId
         },
         pathname: `/blog/article/edit/${dummyArticleId}`,
-      },
-      router
+      }
     );
 
     /* @NOTE: Arrange */
@@ -649,6 +750,257 @@ describe('Test article page for my blog', () => {
 });
 ```
 
+## Testing Web Network Connections
+
+With **mocklets**, you can test two types of network requests namely:
+
+- Web Sockets (`ws://`)
+- HTTP (`http://`)
+
+Here's an example of each:
+
+#### WebSockets
+
+>src/chatRoom.js
+```js
+
+const urlMap = {};
+
+export const createWebSocketClient = (eventOptions = {}) => {
+  let _socket = null;
+
+  return {
+    connectTo (url = '') {
+      if (typeof url !== "string"
+        || _socket !== null
+          || urlMap.hasOwnProperty(url)) {
+        return Promise.reject(_socket);
+      }
+
+      return new Promise((resolve, reject) => {
+        try {
+          _socket = new window.WebSocket(url);
+
+          Object.keys(eventOptions).map((event) => {
+            const $callback = eventOptions[event]
+            _socket.addEventListener(event, $callback.bind(null, _socket));
+          });
+
+          urlMap[url] = _socket.readyState;
+          _socket.addEventListener('error', () => {
+            delete urlMap[url];
+            _socket = null;
+            reject(null)
+          })
+          _socket.addEventListener('open', () => {
+            urlMap[url] = _socket.readyState;
+            resolve(_socket)
+          })
+        } catch(_) {
+          _socket = null
+          reject(_socket);
+        }
+      })
+    },
+    sendMessage (message = '') {
+      if (typeof message !== "string"
+        || _socket === null) {
+        return;
+      }
+
+      if (urlMap.hasOwnProperty(url)) {
+        urlMap[url] = _socket.readyState;
+        _socket.send(message);
+      }
+    }
+  }
+} 
+```
+
+Now, write a test
+
+>tests/integrations/webSocket.spec.js
+```js
+import {
+  provisionMockedJSConsoleLoggingForTests,
+  provisionMockedWebSocketClientAndServerForTests,
+  $EXECUTION
+} from 'mocklets';
+
+import { createWebSocketClient  } from '../../src/chatRoom'
+
+/* @HINT:
+ *
+ * Setup mocking for `console.log(...)`,
+ * `console.error(...)` and `console.info(...)`
+ * 
+ * Compact logging is used to tie logs to specific
+ * tests with related prefix text.
+ * 
+ */
+provisionMockedJSConsoleLoggingForTests(
+  $EXECUTION.COMPACT_LOGGING,
+  [ 'log', 'error', 'info' ]
+);
+/* @HINT:
+ *
+ * Setup the mock web sockets server,
+ * as well as the client constructor
+ */
+const handle = provisionMockedWebSocketClientAndServerForTests(
+  (serverInstance) => {
+    serverInstance.on('connection', (socket) => {
+      socket.on('message', () => {
+        // @TODO: Provide actual implementation later
+        socket.send('PING! PING!!')
+      });
+    })
+  },
+  'ws://localhost:8080'
+);
+
+describe('Test websocket comms', () => {
+  it('should connect and recieve data only when connection is alive', () => {
+    /** Arrange */
+    const client = createWebSocketClient({
+      open: (websocket/*, event */) => {
+        console.info("Details: ", websocket.url, websocket.readyState)
+      },
+      error: (websocket/*, event */) => {
+        websocket.close();
+      },
+      close: (/* websocket, event */) => {
+        console.error("web socket is closed")
+      },
+      message: (websocket, event) => {
+        if (websocket.readyState === window.WebSocket.OPEN) {
+          console.log("Message: ", event.data);
+        }
+      }
+    })
+
+
+    /** Act */
+    client.connectTo("ws://localhost:8080").then(
+      () => {
+        client.sendMessage("Hello!")
+        setTimeout(() => {
+          handle.webSocketServerMock.simulate('error')
+        }, 0);
+      }
+    );
+    
+
+    /** Assert */
+    expect(handle.webSocketServerMock).toBeDefined()
+    expect(handle.webSocketServerMock.clients().length).toBe(1)
+
+    setTimeout(() => {
+      expect(console.info).toHaveBeenCalled();
+      expect(console.info).toHaveBeenCalledTimes(1);
+      expect(console.info).toHaveBeenCalledWith("Details: ", "ws://localhost:8080", window.WebSocket.OPEN)
+
+      expect(console.log).toHaveBeenCalled();
+      expect(console.log).toHaveBeenCalledWith("Message: ", "PING! PING!!")
+
+      expect(console.error).toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalledWith("web socket is closed");
+    }, 1500);
+  })
+});
+```
+
+#### HTTP
+
+>src/apis/getTodos.js
+```js
+
+class HttpResponseError extends Error {
+  constructor (public message: string, public response: Response) {
+    super(message);
+    this.response = response
+  }
+}
+
+export default async function getTodos () {
+  let result = null;
+
+  try {
+    result = await window.fetch('https://service.tryoptar.com/api/v1/todos', {
+      method: 'GET',
+      mode: 'no-cors'
+    });
+
+    if (!result.ok) {
+      throw new HttpResponseError('http server error', result)
+    }
+
+    const jsonText = await result.text();
+
+    return JSON.parse(jsonText);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error.message);
+    }
+  }
+}
+```
+
+Now, write a test
+
+>test/integrations/httpServer.js
+```js
+import {
+  provisionMockedJSConsoleLoggingForTests,
+  provisionMockedHttpServerForTests,
+  $EXECUTION
+} from 'mocklets';
+
+import getTodos from '../../src/apis/getTodos'
+
+/* @HINT:
+ *
+ * Setup mocking for `console.error(...)`
+ * and `console.info(...)`
+ * 
+ */
+provisionMockedJSConsoleLoggingForTests(
+  $EXECUTION.DELAYED_LOGGING,
+  [ 'error', 'info' ]
+);
+/* @HINT:
+ *
+ * Setup the mock http server,
+ * 
+ */
+provisionMockedHttpServerForTests((http) => {
+  return [
+    http.get('https://service.tryoptar.com/api/v1/todos', () => {
+      console.info('Captured a "GET /todos" request')
+      return new Response('[ todos! ]')
+    }),
+    http.delete('https://service.tryoptar.com/api/v1/todos/:id', ({ params }) => {
+      console.log(`Captured a "DELETE /todos/${params.id}" request`)
+    }),
+    http.head('https://service.tryoptar.com/api/v1', () => {
+      // Respond with a network error.
+      return Response.error()
+    })
+  ]
+});
+
+describe('Test api comms', () => {
+
+  it('should return todos', async () => {
+    /** Assert */
+    expect(console.info).toHaveBeenCalled()
+    expect(console.info).toHaveBeenCalledTimes(1)
+    expect(console.info).toHaveBeenCalledWith('Captured a "GET /todos" request')
+    await expect(getTodos()).resolves.toBe('[ todos! ]');
+  })
+})
+```
+
 ## Setting up for Jest
 To be able to use mocklets with the most ease and clarity, it is advised the you set up the [Jest configuration for `setupFilesAfterEnv`](https://jest-archive-august-2023.netlify.app/docs/26.x/configuration/#setupfilesafterenv-array).
 
@@ -669,15 +1021,16 @@ module.exports = {
 
     // Handle image imports
     // https://jestjs.io/docs/webpack#handling-static-assets
-    '^.+\\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$': '<rootDir>/__mocks__/fileMock.js',
+    '^.+\\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$': '<rootDir>/__mocks__/imageFileMock.js',
   },
   setupFilesAfterEnv: [
     /*! The mocklets jest setup file should be the first entry into the array */
     '<rootDir>/node_modules/mocklets/.export/jest.setup.js',
-    '<rootDir>/setupJestTests.ts'
+    //'<rootDir>/setupJestTests.ts'
   ],
 }
 ```
+**mocklets** makes it easy to use Jest mocks and mock implementations for the popular libraries and packages that you use everyday.
 
 ## License
 

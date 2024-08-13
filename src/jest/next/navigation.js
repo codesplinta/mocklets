@@ -4,7 +4,6 @@ export const fakeNextJSNavigationPackageFactory = (eventsMap) => {
   const useRouter = nextJSuseRouter(eventsMap)
   return () => ({
     __esModule: true,
-    ...jest.requireActual('next/navigation'),
     notFound: jest.fn(),
     usePathname: jest.fn().mockImplementation(() => {
       const router = useRouter()

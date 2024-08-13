@@ -15,6 +15,7 @@
 - Added `provisionFakeBrowserDialogForTests()` helper function
 - Added `provisionMockedMaterialUIKitForTests()` helper function
 - Added `provisionMockedWebSocketClientAndServerForTests()` helper function
+- Added `provisionMockedHttpServerForTests()` helper function
 - Added `provisionMockedNodeJSCloudinaryForTests()` helper function (WIP: "`Cloudinary.uploader` fake **Cloudinary**" - v0.0.5)
 
 ### WIP (Work-in-progress)
@@ -55,7 +56,7 @@
 - Fixed bug with `browserStorage` fake object.
 
 <a name="0.0.2"></a>
-# 0.0.2 (2022-04-16)
+# 0.0.2 (2023-04-16)
 
 ### Feature Added
 - None
@@ -64,7 +65,7 @@
 - Exposed missing TypeScript declaration file
 
 <a name="0.0.1"></a>
-# 0.0.1 (2022-04-16)
+# 0.0.1 (2023-04-16)
 
 ### Feature Added
 - Added `provisionMockedDateForTests()` helper function.

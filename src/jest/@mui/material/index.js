@@ -16,9 +16,8 @@ export const createTheme = () => ({
 export const fakeMaterialUIKitPackageFactory = () => {
   return () => ({
     __esModule: true,
-    ...jest.requireActual('@mui/material'),
     useTheme: jest.fn().mockImplementation(() => createTheme()),
-    useMediaQuery: jest.fn().mockImplementation((mediaQueryTagOrFunction, options = {}) => {
+    useMediaQuery: (mediaQueryTagOrFunction, options = {}) => {
       let mediaQueryTag = ''
 
       if (!options.noSsr) {
@@ -32,6 +31,6 @@ export const fakeMaterialUIKitPackageFactory = () => {
       }
 
       return mediaQueryMatcher(mediaQueryTag).matches
-    })
+    }
   })
 }

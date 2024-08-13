@@ -1,5 +1,19 @@
-// https://github.com/jsdom/jsdom/issues/1724
+// see: https://github.com/jsdom/jsdom/blob/main/Changelog.md#1151
+//import 'yet-another-abortcontroller-polyfill'
+
+// see: https://github.com/jsdom/jsdom/issues/1724
 import 'whatwg-fetch';
+
+if (window.fetch) {
+  const _fetch = window.fetch;
+
+  window.fetch = function (url, options = {}) {
+    // see: https://github.com/JakeChampion/fetch?tab=readme-ov-file#caveats
+    return _fetch(url, Object.assign({}, {
+      credentials: 'same-origin'
+    }, options))
+  }
+}
 
 // There should be a single listener which simply prints to the
 // console. We will wrap that listener in our own listener.

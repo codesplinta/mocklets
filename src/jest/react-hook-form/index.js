@@ -46,12 +46,11 @@ export const fakeReactHookFormPackageFactory = () => {
   let _submitCount = 0
 
   const mockController = () => {
-    return {}// <></>
+    return {} // <></>
   }
 
   return () => ({
     __esModule: true,
-    ...jest.requireActual('react-hook-form'),
     Controller: () => mockController(),
     useForm: ({ defaultValues }) => {
       _defaultValues = defaultValues

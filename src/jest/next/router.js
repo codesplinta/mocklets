@@ -522,7 +522,6 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 export const fakeNextJSRouterPackageFactory = (eventsMap) => {
   return () => ({
     __esModule: true,
-    ...jest.requireActual('next/router'),
     useRouter: nextJSuseRouter(eventsMap)
   })
 }

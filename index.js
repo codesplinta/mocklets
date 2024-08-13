@@ -13,6 +13,10 @@ import { fakeIntersectionObserverFactory } from './src/jest/IntersectionObserver
 import { fakeResizeObserverFactory } from './src/jest/ResizeObserver'
 import { fakeStorageInstanceFactory } from './src/jest/browserStorage'
 
+// @CHECK: https://mswjs.io/docs/basics/mocking-responses
+import { http, graphql, passthrough } from 'msw'
+import { setupServer } from 'msw/node'
+
 // import { afterEach, beforeEach, afterAll } from '@jest/globals'
 
 const $fixtures = require('./src/jest/__fixtures__')
@@ -52,7 +56,8 @@ function assertReadonlyGlobalsNotMutable (property) {
     'clientInformation',
     'caches',
     'closed',
-    'crypto'
+    'crypto',
+    'fetch'
   ]
 
   if (readOnlyGlobalObjects.includes(property)) {
@@ -398,24 +403,30 @@ export const provisionFakeBrowserIntersectionObserverForTests = () => {
 }
 
 /**
- * A helper utility that enables the use of fake browser API: `window.alert()`, `window.confirm()`
- * & `window.prompt()` within tests
+ * A helper utility that enables the use of fake browser API: `window.alert()`, `window.confirm()`,
+ * `window.open()` & `window.prompt()` within tests
+ *
+ * @param {String} type
+ * @param {Boolean} returnType
  *
  * @returns void
  * @api public
  */
 export const provisionFakeBrowserDialogForTests = (type, returnType) => {
   const dialogs = {
+    open: jest.fn(() => undefined),
     alert: jest.fn(() => undefined),
     prompt: jest.fn(() => true),
     confirm: jest.fn(() => true)
   }
 
   switch (true) {
+    case type === 'open':
     case type === 'alert':
     case type === 'prompt':
     case type === 'confirm':
-      if (typeof returnType === 'boolean') {
+      if (/^(?:prompt|confirm)$/.test(type) &&
+        typeof returnType === 'boolean') {
         (dialogs[type]).mockImplementationOnce(() => returnType)
       }
       provisionFakeWebPageWindowObject(type, dialogs[type])
@@ -534,7 +545,7 @@ export const provisionMockedNextJSRouterForTests = () => {
  *
  * @param {1 | 0} clearAfterEach
  *
- * @return {{ $getAllRouterEventsMap: Function, $setSpyOn_useRouter: Function, $setSpyOn_useRouter_WithReturnValueOnce: Function }}
+ * @return {{ $getAllRouterEventsMap: Function, $setSpyOn_useRouter: Function, $setSpyOn_withRouter: Function, $setSpyOn_useRouter_WithReturnValueOnce: Function }}
  * @api public
  */
 /* eslint-disable-next-line */
@@ -559,30 +570,35 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
 
   return {
     $getAllRouterEventsMap: () => ___eventsSubscribed,
-    $setSpyOn_useRouter: (nextRouterExportObject) => {
+    $setSpyOn_useRouter: () => {
       return jest.spyOn(
-        nextRouterExportObject || require('next/router'),
+        require('next/router'),
         'useRouter'
+      )
+    },
+    $setSpyOn_withRouter: () => {
+      return jest.spyOn(
+        require('next/router'),
+        'withRouter'
       )
     },
     $setSpyOn_useRouter_withReturnValueOnce: ({
       query = {},
       pathname = '/',
-      locale = 'en-US',
+      locale = 'en_US',
       isPreview = false,
       basePath = '/'
-    }, nextRouterExportObject, nextNavigationExportObject
-    ) => {
+    }) => {
       const useRouter = jest.spyOn(
-        nextRouterExportObject || require('next/router'),
+        require('next/router'),
         'useRouter'
       )
       const usePathname = jest.spyOn(
-        nextNavigationExportObject || require('next/naviagtion'),
+        require('next/navigation'),
         'usePathname'
       )
       const useSearchParams = jest.spyOn(
-        nextNavigationExportObject || require('next/naviagtion'),
+        require('next/navigation'),
         'useSearchParams'
       )
 
@@ -602,14 +618,14 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
 
       usePathname.mockImplementationOnce(() => {
         return $routerFields.asPath
-      }).mockImplementation(() => {
+      }).mockImplementation(function () {
         const router = useRouter()
         return router.asPath
       })
 
       useSearchParams.mockImplementationOnce(() => {
         return new URLSearchParams($routerFields.query)
-      }).mockImplementation(() => {
+      }).mockImplementation(function () {
         const router = useRouter()
         return new URLSearchParams(router.query)
       })
@@ -622,7 +638,7 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
 /**
  * A helper utility that enables the use of mock react-hook-form package within tests that returns addons
  *
- * @return {{ $setSpyOn_useFormContext: Function, $setSpyOn_useFromContext_WithReturnValueOnce: Function }}
+ * @return {{ $setSpyOn_useForm: Function, $setSpyOn_useForm_withMockImplementation: Function }}
  * @api public
  */
 /* eslint-disable-next-line */
@@ -636,18 +652,20 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
   )
 
   return {
-    $setSpyOn_useForm: (reactHookFormExportObject) => {
+    $setSpyOn_useForm: () => {
       return jest.spyOn(
-        reactHookFormExportObject || require('react-hook-form'), 'useForm'
+        require('react-hook-form'),
+        'useForm'
       )
     },
-    $setSpyOn_useFrom_withReturnValueOnce: ({
-      formStateErrors = {},
-      values = {}
-    }, reactHookFormExportObject
+    $setSpyOn_useForm_withMockImplementation: (
+      {
+        formStateErrors = {},
+        values = {}
+      }
     ) => {
       const useForm = jest.spyOn(
-        reactHookFormExportObject || require('react-hook-form'),
+        require('react-hook-form'),
         'useForm'
       )
 
@@ -666,7 +684,7 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
       //   ...$formContextFields
       // }
 
-      useForm.mockReturnValueOnce($formContextFields)
+      useForm.mockImplementationOnce(() => $formContextFields)
 
       return $formContextFields // returnValue
     }
@@ -676,15 +694,30 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
 /**
  * A helper utility that enables the use of mock Material UI kit: `@mui/material` within tests
  *
- * @return void
+ * @return {{ $setSpyOn_useMediaQuery_withMockImplementation: Function }}
  * @api public
  */
 export const provisionMockedMaterialUIKitForTests = () => {
+  const muiFactory = fakeMaterialUIKitPackageFactory()
+
   /* @HINT: This doesn't work for now */
   provisionFakeJSObject(
     '@mui/material',
-    fakeMaterialUIKitPackageFactory()
+    muiFactory()
   )
+
+  return {
+    $setSpyOn_useMediaQuery_withMockImplementation: () => {
+      const useMediaQuery = jest.spyOn(
+        require('@mui/material'),
+        'useMediaQuery'
+      )
+
+      const $useMediaQuery = (muiFactory().useMediaQuery)
+
+      useMediaQuery.mockImplementation((...args) => $useMediaQuery(...args))
+    }
+  }
 }
 
 /**
@@ -752,7 +785,7 @@ export const provisionMockedReacti18NextForTests = (translationMapCallback = () 
  *
  * @param {Function} mockFactoryCallback
  *
- * @return {{ nodeFileSystemMock: Object }}
+ * @return {{ nodeJsFileSystemMock: Object }}
  * @api public
  */
 export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = () => undefined) => {
@@ -794,7 +827,7 @@ export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = ()
   })
 
   return {
-    get nodeFileSystemMock () {
+    get nodeJsFileSystemMock () {
       return mock
     }
   }
@@ -803,21 +836,31 @@ export const provisionMockedNodeJSFileSystemForTests = (mockFactoryCallback = ()
 /**
  * A helper utility that enables the use of `window.WebSocket` and a mock server for test cases
  *
- * @param {String} webSocketServerUrl
  * @param {Function} mockFactoryCallback
+ * @param {String} webSocketServerUrl
  *
  * @return {{ webSocketServerMock: Object }}
  * @api public
  */
-export const provisionMockedWebSocketClientAndServerForTests = (webSocketServerUrl, mockFactoryCallback) => {
+export const provisionMockedWebSocketClientAndServerForTests = (mockFactoryCallback, webSocketServerUrl) => {
   let server = null
 
   let [_server, WebSocket] = fakeWebSocketFactory(webSocketServerUrl)
 
-  provisionFakeWebPageWindowObject(
-    'WebSocket',
-    WebSocket
-  )
+  /* @NOTE:
+   *
+   * The `WebSocket` spec-complaint API was implemented by
+   * JSDOM in 2018. So, here we check if it's available.
+   *
+   * However, we want to allow `mock-socket` to control the
+   * faking of the `WebSocket` implementation
+   */
+  if (!('WebSocket' in window)) {
+    provisionFakeWebPageWindowObject(
+      'WebSocket',
+      WebSocket
+    )
+  }
 
   if (typeof mockFactoryCallback === 'function') {
     server = _server
@@ -825,17 +868,22 @@ export const provisionMockedWebSocketClientAndServerForTests = (webSocketServerU
   }
 
   afterEach(() => {
+    server.close()
     server = null
+    _server = null
   })
 
   beforeEach(() => {
-    if (typeof mockFactoryCallback === 'function') {
-      [server] = fakeWebSocketFactory(webSocketServerUrl)
-      mockFactoryCallback(server)
+    if (server === null) {
+      if (typeof mockFactoryCallback === 'function') {
+        [server] = fakeWebSocketFactory(webSocketServerUrl)
+        mockFactoryCallback(server)
+      }
     }
   })
 
   afterAll(() => {
+    server.stop()
     server = null
     _server = null
   })
@@ -845,6 +893,39 @@ export const provisionMockedWebSocketClientAndServerForTests = (webSocketServerU
       return server
     }
   }
+}
+
+/**
+ * A helper utility that enables the mocking of a HTTP server
+ *
+ * @param {Function} mockFactoryCallback
+ * @param {String} type
+ *
+ * @returns void
+ * @api public
+ */
+export const provisionMockedHttpServerForTests = (mockFactoryCallback, type = 'http') => {
+  let handlers = []
+
+  if (typeof mockFactoryCallback === 'function') {
+    handlers = mockFactoryCallback(
+      type === 'http' ? http : graphql,
+      passthrough
+    ) || []
+  }
+
+  const server = setupServer(...handlers)
+
+  beforeAll(() => server.listen())
+
+  /* @SEE: https://kentcdodds.com/blog/stop-mocking-fetch */
+
+  // if you need to add a handler after calling setupServer for some specific test
+  // this will remove that handler for the rest of them
+  // (which is important for test isolation):
+  afterEach(() => server.resetHandlers())
+
+  afterAll(() => server.close())
 }
 
 /**
@@ -1086,6 +1167,11 @@ export const provisionMockedJSConsoleLoggingForTests = (
         logsBuffer = []
       }
     }
+  })
+
+  afterAll(() => {
+    logsBuffer = null
+    _Console = null
   })
 }
 

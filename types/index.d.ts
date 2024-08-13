@@ -1,3 +1,4 @@
+/// <reference types="./msw-custom" />
 /// <reference types="./express-http-custom" />
 /// <reference types="./next-router-custom" />
 /// <reference types="./next-api-custom" />
@@ -26,8 +27,245 @@ declare global {
   }
 }
 
+type JSObject = { [key: string]: unknown };
+
+type JSONObject<D = JSObject> = object | Record<keyof D, string | boolean | number | null | undefined>;
+
 // support TS under 3.5
 type _Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
+/**
+ * Represents the result of a single call to a mock function with a return value.
+ */
+ interface MockResultReturn<T> {
+  type: "return";
+  value: T;
+}
+/**
+* Represents the result of a single incomplete call to a mock function.
+*/
+interface MockResultIncomplete {
+  type: "incomplete";
+  value: undefined;
+}
+/**
+* Represents the result of a single call to a mock function with a thrown error.
+*/
+interface MockResultThrow {
+  type: "throw";
+  value: any;
+}
+
+type MockResult<T> = MockResultReturn<T> | MockResultThrow | MockResultIncomplete;
+
+interface MockContext<T, Y extends any[], C = any> {
+  /**
+   * List of the call arguments of all calls that have been made to the mock.
+   */
+  calls: Y[];
+  /**
+   * List of the call contexts of all calls that have been made to the mock.
+   */
+  contexts: C[];
+  /**
+   * List of all the object instances that have been instantiated from the mock.
+   */
+  instances: T[];
+  /**
+   * List of the call order indexes of the mock. Jest is indexing the order of
+   * invocations of all mocks in a test file. The index is starting with `1`.
+   */
+  invocationCallOrder: number[];
+  /**
+   * List of the call arguments of the last call that was made to the mock.
+   * If the function was not called, it will return `undefined`.
+   */
+  lastCall?: Y;
+  /**
+   * List of the results of all calls that have been made to the mock.
+   */
+  results: Array<MockResult<T>>;
+}
+
+type RejectedValue<T> = T extends PromiseLike<any> ? any : never;
+type ResolvedValue<T> = T extends PromiseLike<infer U> ? U | T : never;
+
+interface MockInstance<T, Y extends any[], C = any> {
+  /** Returns the mock name string set by calling `mockFn.mockName(value)`. */
+  getMockName(): string;
+  /** Provides access to the mock's metadata */
+  mock: MockContext<T, Y, C>;
+  /**
+   * Resets all information stored in the mockFn.mock.calls and mockFn.mock.instances arrays.
+   *
+   * Often this is useful when you want to clean up a mock's usage data between two assertions.
+   *
+   * Beware that `mockClear` will replace `mockFn.mock`, not just `mockFn.mock.calls` and `mockFn.mock.instances`.
+   * You should therefore avoid assigning mockFn.mock to other variables, temporary or not, to make sure you
+   * don't access stale data.
+   */
+  mockClear(): this;
+  /**
+   * Resets all information stored in the mock, including any initial implementation and mock name given.
+   *
+   * This is useful when you want to completely restore a mock back to its initial state.
+   *
+   * Beware that `mockReset` will replace `mockFn.mock`, not just `mockFn.mock.calls` and `mockFn.mock.instances`.
+   * You should therefore avoid assigning mockFn.mock to other variables, temporary or not, to make sure you
+   * don't access stale data.
+   */
+  mockReset(): this;
+  /**
+   * Does everything that `mockFn.mockReset()` does, and also restores the original (non-mocked) implementation.
+   *
+   * This is useful when you want to mock functions in certain test cases and restore the original implementation in others.
+   *
+   * Beware that `mockFn.mockRestore` only works when mock was created with `jest.spyOn`. Thus you have to take care of restoration
+   * yourself when manually assigning `jest.fn()`.
+   *
+   * The [`restoreMocks`](https://jestjs.io/docs/en/configuration.html#restoremocks-boolean) configuration option is available
+   * to restore mocks automatically between tests.
+   */
+  mockRestore(): void;
+  /**
+   * Returns the function that was set as the implementation of the mock (using mockImplementation).
+   */
+  getMockImplementation(): ((...args: Y) => T) | undefined;
+  /**
+   * Accepts a function that should be used as the implementation of the mock. The mock itself will still record
+   * all calls that go into and instances that come from itself – the only difference is that the implementation
+   * will also be executed when the mock is called.
+   *
+   * Note: `jest.fn(implementation)` is a shorthand for `jest.fn().mockImplementation(implementation)`.
+   */
+  mockImplementation(fn?: (...args: Y) => T): this;
+  /**
+   * Accepts a function that will be used as an implementation of the mock for one call to the mocked function.
+   * Can be chained so that multiple function calls produce different results.
+   *
+   * @example
+   *
+   * const myMockFn = jest
+   *   .fn()
+   *    .mockImplementationOnce(cb => cb(null, true))
+   *    .mockImplementationOnce(cb => cb(null, false));
+   *
+   * myMockFn((err, val) => console.log(val)); // true
+   *
+   * myMockFn((err, val) => console.log(val)); // false
+   */
+  mockImplementationOnce(fn: (...args: Y) => T): this;
+  /**
+   * Temporarily overrides the default mock implementation within the callback,
+   * then restores its previous implementation.
+   *
+   * @remarks
+   * If the callback is async or returns a `thenable`, `withImplementation` will return a promise.
+   * Awaiting the promise will await the callback and reset the implementation.
+   */
+  withImplementation(fn: (...args: Y) => T, callback: () => Promise<unknown>): Promise<void>;
+  /**
+   * Temporarily overrides the default mock implementation within the callback,
+   * then restores its previous implementation.
+   */
+  withImplementation(fn: (...args: Y) => T, callback: () => void): void;
+  /** Sets the name of the mock. */
+  mockName(name: string): this;
+  /**
+   * Just a simple sugar function for:
+   *
+   * @example
+   *
+   *   jest.fn(function() {
+   *     return this;
+   *   });
+   */
+  mockReturnThis(): this;
+  /**
+   * Accepts a value that will be returned whenever the mock function is called.
+   *
+   * @example
+   *
+   * const mock = jest.fn();
+   * mock.mockReturnValue(42);
+   * mock(); // 42
+   * mock.mockReturnValue(43);
+   * mock(); // 43
+   */
+  mockReturnValue(value: T): this;
+  /**
+   * Accepts a value that will be returned for one call to the mock function. Can be chained so that
+   * successive calls to the mock function return different values. When there are no more
+   * `mockReturnValueOnce` values to use, calls will return a value specified by `mockReturnValue`.
+   *
+   * @example
+   *
+   * const myMockFn = jest.fn()
+   *   .mockReturnValue('default')
+   *   .mockReturnValueOnce('first call')
+   *   .mockReturnValueOnce('second call');
+   *
+   * // 'first call', 'second call', 'default', 'default'
+   * console.log(myMockFn(), myMockFn(), myMockFn(), myMockFn());
+   */
+  mockReturnValueOnce(value: T): this;
+  /**
+   * Simple sugar function for: `jest.fn().mockImplementation(() => Promise.resolve(value));`
+   */
+  mockResolvedValue(value: ResolvedValue<T>): this;
+  /**
+   * Simple sugar function for: `jest.fn().mockImplementationOnce(() => Promise.resolve(value));`
+   *
+   * @example
+   *
+   * test('async test', async () => {
+   *  const asyncMock = jest
+   *    .fn()
+   *    .mockResolvedValue('default')
+   *    .mockResolvedValueOnce('first call')
+   *    .mockResolvedValueOnce('second call');
+   *
+   *  await asyncMock(); // first call
+   *  await asyncMock(); // second call
+   *  await asyncMock(); // default
+   *  await asyncMock(); // default
+   * });
+   */
+  mockResolvedValueOnce(value: ResolvedValue<T>): this;
+  /**
+   * Simple sugar function for: `jest.fn().mockImplementation(() => Promise.reject(value));`
+   *
+   * @example
+   *
+   * test('async test', async () => {
+   *   const asyncMock = jest.fn().mockRejectedValue(new Error('Async error'));
+   *
+   *   await asyncMock(); // throws "Async error"
+   * });
+   */
+  mockRejectedValue(value: RejectedValue<T>): this;
+
+  /**
+   * Simple sugar function for: `jest.fn().mockImplementationOnce(() => Promise.reject(value));`
+   *
+   * @example
+   *
+   * test('async test', async () => {
+   *  const asyncMock = jest
+   *    .fn()
+   *    .mockResolvedValueOnce('first call')
+   *    .mockRejectedValueOnce(new Error('Async error'));
+   *
+   *  await asyncMock(); // first call
+   *  await asyncMock(); // throws "Async error"
+   * });
+   */
+  mockRejectedValueOnce(value: RejectedValue<T>): this;
+}
+
+type ArgsType<T> = T extends (...args: infer A) => any ? A : never;
+
+interface SpyInstance<T = any, Y extends any[] = any, C = any> extends MockInstance<T, Y, C> {}
 
 interface Timekeeper {
   freeze(date?: Date | number | string): void;
@@ -100,6 +338,10 @@ declare namespace jasmine {
 }
 
 declare module 'mocklets' {
+  function withRouter<P extends import('.next/router').WithRouterProps, C extends import('.next/router').BaseContext = import('.next/router').NextPageContext>(
+    ComposedComponent: import('.next/router').NextComponentType<C, any, P>
+  ): import('react').ComponentType<import('.next/router').ExcludeRouterProps<P>>;
+
   class WebSocketServer extends EventTarget {
     constructor(url: string, options?: ServerOptions);
   
@@ -142,7 +384,7 @@ declare module 'mocklets' {
  *
  * @param {1 | 0} clearAfterEach
  * 
- * @return void
+ * @returns void
  * @api public
  */
   export function provisionFakeBrowserSessionStorageForTests(
@@ -160,48 +402,64 @@ declare module 'mocklets' {
     clearAfterEach?: 1 | 0
   ): void;
 /**
+ * A helper utility that enables the use of HTTP a mock server for test cases
+ *
+ * @param {Function} mockFactoryCallback
+ * @param {String} type
+ *
+ * @returns void
+ * @api public
+ */
+  export function provisionMockedHttpServerForTests(
+    mockFactoryCallback: (router: import('.msw').router, passthrough?: typeof import('.msw').passthrough) => void,
+    type?: 'http' | 'graphql'
+  ): void;
+/**
  * A helper utility that enables the use of `window.WebSocket` and a mock server for test cases
  *
- * @param {String} webSocketServerUrl
  * @param {Function} mockFactoryCallback
+ * @param {String} webSocketServerUrl
  *
- * @return {{ webSocketServerMock: Object }}
+ * @returns {{ webSocketServerMock: Object }}
  * @api public
  */
   export function provisionMockedWebSocketClientAndServerForTests(
-    webSocketServerUrl: string,
-    mockFactoryCallback: (server: WebSocketServer) => void
+    mockFactoryCallback: (server: WebSocketServer) => void,
+    webSocketServerUrl: string
   ): { webSocketServerMock: WebSocketServer | null };
 /**
  * A helper utility that enables the use of fake browser API: `window.IntersectionObserver` within tests
  *
- * @return void
+ * @returns void
  * @api public
  */
   export function provisionFakeBrowserIntersectionObserverForTests(): void;
 /**
  * A helper utility that enables the use of fake browser API: `window.ResizeObserver` within tests
  *
- * @return void
+ * @returns void
  * @api public
  */
   export function provisionFakeBrowserResizeObserverForTests(): void;
 /**
  * A helper utility that enables the use of fake browser API: `window.matchMedia` within tests
  *
- * @return void
+ * @returns void
  * @api public
  */
   export function provisionFakeBrowserMatchMediaForTests(): void;
 /**
- * A helper utility that enables the use of fake browser API: `window.alert()`, `window.confirm()`
- * & `window.prompt()` within tests 
+ * A helper utility that enables the use of fake browser API: `window.alert()`, `window.confirm()`,
+ * `window.open()` & `window.prompt()` within tests
  * 
+ * @param {String} type
+ * @param {Boolean} returnType
+ *
  * @returns void
  * @api public
  */
   export function provisionFakeBrowserDialogForTests(
-    type: 'alert' | 'confirm' | 'prompt',
+    type: 'alert' | 'confirm' | 'prompt' | 'open',
     returnType?: boolean
   ): void;
 /**
@@ -216,11 +474,11 @@ declare module 'mocklets' {
 /**
  * A helper utility that enables the use of mock i18n for ReactJS: `react-i18next` within tests
  *
- * @return void
+ * @returns void
  * @api public
  */
   export function provisionMockedReacti18NextForTests(
-    translationMapCallback: () => Record<string, string>
+    translationMapCallback: () => Record<string, Record<string, string>>
   ): void;
 /**
  * A helper utility that enables the use of mock NextJS router package within tests
@@ -232,24 +490,24 @@ declare module 'mocklets' {
 /**
  * A helper utility that enables the use of mock Material UI kit: `@mui/material` within tests
  * 
- * @return void
+ * @return {{ $setSpyOn_useMediaQuery_withMockImplementation: Function }}
  * @api public
  */
-  export function provisionMockedMaterialUIKitForTests(): void;
+  export function provisionMockedMaterialUIKitForTests(): {
+    $setSpyOn_useMediaQuery_withMockImplementation (): void;
+  };
 /**
  * A helper utility that enables the use of mock NextJS router package within tests that returns addons
  *
  * @param {1 | 0} clearAfterEach
  * 
- * @return {{ $getAllRouterEventsMap: Function, $setSpyOn_useRouter: Function, $setSpyOn_useRouter_WithReturnValueOnce: Function }}
+ * @return {{ $getAllRouterEventsMap: Function, $setSpyOn_useRouter: Function, $setSpyOn_withRouter: Function, $setSpyOn_useRouter_WithReturnValueOnce: Function }}
  * @api public
  */
   export function provisionMockedNextJSRouterForTests_withAddons(clearAfterEach?: 1 | 0): {
     $getAllRouterEventsMap(): Record<import('.next/router').RouterEvent, -1 | 1>;
-    $setSpyOn_useRouter(nextRouter: {
-      useRouter(): import('.next/router').NextRouter,
-      withRouter(): {}
-    }): () => import('.next/router').NextRouter;
+    $setSpyOn_useRouter(): SpyInstance<import('.next/router').NextRouter, ArgsType<void>>;
+    $setSpyOn_withRouter(): SpyInstance<ReturnType<typeof withRouter>, ArgsType<typeof withRouter>>
     $setSpyOn_useRouter_withReturnValueOnce(
       options: {
         pathname: string,
@@ -257,28 +515,23 @@ declare module 'mocklets' {
         isPreview?: boolean,
         basePath?: string,
         query?: Record<string, string | string[]>
-      },
-      nextRouter?: {
-        useRouter(): import('.next/router').NextRouter,
-        withRouter(): {}
-      },
-      nextNavigation?: {}
+      }
     ): import('.next/router').NextRouter
   }
 /**
  * A helper utility that enables the use of mock react-hook-form package within tests that returns addons
  *
- * @return {{ $setSpyOn_useForm: Function, $setSpyOn_useFrom_withReturnValueOnce: Function }}
+ * @return {{ $setSpyOn_useForm: Function, $setSpyOn_useForm_withMockImplementation: Function }}
  * @api public
  */
   export function provisionMockedReactHookFormForTests_withAddons():{
-    $setSpyOn_useForm(): import('.react-hook-form').UseFormReturn,
-    $setSpyOn_useFrom_withReturnValueOnce(
+    $setSpyOn_useForm(): SpyInstance<import('.react-hook-form').UseFormReturn, ArgsType<import('.react-hook-form').UseFormProps>>,
+    $setSpyOn_useForm_withMockImplementation<V>(
       options: {
-        formStateErrors?: {},
-        values?: {}
+        formStateErrors?: import('.react-hook-form').FormState<JSONObject<V>>,
+        values?: JSONObject<V>
       }
-    ): import('.react-hook-form').UseFormReturn
+    ): import('.react-hook-form').UseFormReturn<V>
   }
 /**
  * A helper utility that enables the use of mock `cloudinary.v2` package : require('cloudinary').v2 within tests
@@ -286,7 +539,9 @@ declare module 'mocklets' {
  * @return void
  * @api public
  */
- export function provisionMockedNodeJSCloudinaryForTests(): void;
+ export function provisionMockedNodeJSCloudinaryForTests(
+
+ ): void;
 /**
  * A helper utility that enables the use of mock AdonisJS v4 cache package : `require('adonis-cache')` within tests
  *
@@ -343,7 +598,7 @@ declare module 'mocklets' {
     resetAfterEach?: 1 | 0
   ): {
     getTestFixtures<F extends Function | Record<string, unknown>>(
-      fixtureKey?: 'expressHttpRequest' | 'expressHttpResponse' |  'expressNext' | 'nextApiRequest' | 'nextApiResponse' | & string,
+      fixtureKey?: 'expressHttpRequest' | 'expressHttpResponse' |  'expressNext' | 'nextApiRequest' | 'nextApiResponse' & string,
       extraFixturesState?: Partial<F>
     ): F,
     mutateTestFixture<F extends Record<string, unknown>>(
@@ -359,7 +614,10 @@ declare module 'mocklets' {
  * @api public
  */
   export function  provisionEnvironmentalVariablesForTests_withAddons(): {
-    $setEnv_forThisTestSuite(variableName: string, variableValue: string): void;
+    $setEnv_forThisTestSuite(
+      variableName: string,
+      variableValue: string
+    ): void;
   }
 
 /**
@@ -367,7 +625,7 @@ declare module 'mocklets' {
  * 
  * @param {Function} mockFactoryCallback
  * 
- * @return {{ nodeFileSystemMock: Object }}
+ * @return {{ nodeJsFileSystemMock: Object }}
  * @api public
  */
   export function provisionMockedNodeJSFileSystemForTests(
@@ -375,7 +633,7 @@ declare module 'mocklets' {
       mock: typeof import('mock-fs'),
       path: import('path').PlatformPath
     ) => void
-  ): { nodeFileSystemMock: typeof import('mock-fs') | null }
+  ): { nodeJsFileSystemMock: typeof import('mock-fs') | null }
 
 /**
  * A helper utility that enables the use of mock/fakes for `console` logging only for test cases

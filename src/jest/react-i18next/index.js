@@ -1,11 +1,17 @@
-export const fakeReacti18NextPackageFactory = (translationObjectMap = {}) => {
+export const fakeReacti18NextPackageFactory = (translationObjectMap = {
+  common: { }
+}) => {
+  /* @SEE: https://react.i18next.com/misc/testing */
   return () => ({
     __esModule: true,
-    ...jest.requireActual('react-i18next'),
+    withTranslation: () => Component => {
+      Component.defaultProps = { ...Component.defaultProps, t: jest.fn(() => '') }
+      return Component
+    },
     useTranslation: () => ({
-      t: jest.fn((transaltionKey) => translationObjectMap[transaltionKey]),
+      t: jest.fn((transaltionKey, { ns }) => translationObjectMap[ns][transaltionKey]),
       i18n: {
-        changeLanguage: () => new Promise(() => {})
+        changeLanguage: jest.fn(() => new Promise(() => {}))
       }
     })
   })

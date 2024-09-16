@@ -15,7 +15,12 @@ const isAsync = (callback) => {
     return false
   }
   const $string = callback.toString().trim()
-  return Boolean($string.match(/^async /) || callback.constructor.name === 'AsyncFunction')
+  return Boolean(
+    $string.match(/^async /) ||
+      callback.constructor.name === 'AsyncFunction' ||
+        /* eslint-disable-next-line */
+        callback.__proto__.constructor.name === 'AsyncFunction'
+  )
 }
 
 const isEmpty = (objectValue) => {
@@ -62,7 +67,7 @@ export const fakeReactHookFormPackageFactory = () => {
           unregister: jest.fn(),
           getFieldState: jest.fn((fieldName, formState) => {
             return {
-              error: formState.errors[fieldName] || {},
+              error: formState?.errors[fieldName] || {},
               invalid: _invalidFields[fieldName] || false,
               isDirty: _dirtyFields[fieldName] || false,
               isTouched: _touchedFields[fieldName] || false
@@ -85,7 +90,7 @@ export const fakeReactHookFormPackageFactory = () => {
           _formValues: ['_test'],
           _defaultValues: ['_test']
         }),
-        watch: () => jest.fn(() => true),
+        watch: jest((fieldName) => _values[fieldName] || true),
         handleSubmit (onSubmit, onSubmitError = () => undefined) {
           return jest.fn((e) => {
             if (typeof onSubmit !== 'function' ||
@@ -96,7 +101,11 @@ export const fakeReactHookFormPackageFactory = () => {
             let canSubmit = false
             const form = e.target
             const elements = Array.from(form.elements).filter((element) => {
-              return element.type !== 'hidden' || element.type !== 'reset' || element.type !== 'image' || element.type !== 'button' || element.type !== 'submit'
+              return (element.type !== 'hidden' ||
+                element.type !== 'reset' ||
+                  element.type !== 'image' ||
+                    element.type !== 'button' ||
+                      element.type !== 'submit')
             })
 
             if (elements.length > 0) {
@@ -178,7 +187,7 @@ export const fakeReactHookFormPackageFactory = () => {
             }
           }
         },
-        register (name, { required = false, disabled = false, tabIndex = 0, onBlur, onChange, value, defaultValue, min, max, minLength, maxLength }) {
+        register (name, { required = false, disabled = false, tabIndex = 0, onBlur, onChange, defaultValue }) {
           if (typeof name !== 'string') {
             return {}
           }
@@ -233,6 +242,20 @@ export const fakeReactHookFormPackageFactory = () => {
                       message: e.target.validationMessage,
                       ref: { name: e.target.name },
                       type: 'max'
+                    }
+                    break
+                  case e.target.validity.rangeUnderflow:
+                    error = {
+                      message: e.target.validationMessage,
+                      ref: { name: e.target.name },
+                      type: 'min'
+                    }
+                    break
+                  case e.target.validity.tooLong:
+                    error = {
+                      message: e.target.validationMessage,
+                      ref: { name: e.target.name },
+                      type: 'maxLength'
                     }
                     break
                 }

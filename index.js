@@ -22,12 +22,6 @@ import { setupServer } from 'msw/node'
 const $fixtures = require('./src/jest/__fixtures__')
 const {
   /* eslint-disable-next-line */
-  make_nextApiRequest,
-  /* eslint-disable-next-line */
-  make_nextApiResponse
-} = require('./src/jest/__mocks__/next/api')
-const {
-  /* eslint-disable-next-line */
   make_expressNext,
   /* eslint-disable-next-line */
   make_expressHttpRequest,
@@ -78,12 +72,6 @@ function assertReadonlyGlobalsNotMutable (property) {
  * @private
  */
 const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
-  const isJSDOMLoaded = typeof window !== 'undefined' ? window.navigator.noUI : false
-
-  if (!isJSDOMLoaded) {
-    return
-  }
-
   const { [property]: originalProperty } = window
   const isWindowLocation = property === 'location'
 
@@ -234,8 +222,6 @@ const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
   }
 
   afterEach(() => {
-    jest.clearAllMocks()
-
     if (typeof fakeOrMock === 'function') {
       if (fakeOrMock.length === 0) {
         /* @HINT: Silence automatic hoisting by Jest & Babel */
@@ -249,10 +235,6 @@ const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
         () => fakeOrMock
       )
     }
-  })
-
-  afterAll(() => {
-    jest.resetModules()
   })
 }
 
@@ -940,6 +922,8 @@ export const provisionMockedHttpServerForTests = (mockFactoryCallback, type = 'h
 export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
   /* eslint-disable-next-line */
   const $__cachedExpressJSResponse = null
+  /* eslint-disable-next-line */
+  const $__cachedExpressJSRequest = null
 
   const state = {
     allFixtures: {},
@@ -947,41 +931,62 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
   }
 
   const getTestFixtures = (fixtureKey, extrasFixturesState) => {
-    let fixtures = state.allFixtures
-
     if (typeof fixtureKey !== 'undefined') {
       if (extrasFixturesState instanceof Object) {
         switch (fixtureKey) {
-          case 'nextApiRequest':
-            fixtures = make_nextApiRequest(
-              mutateTestFixture(fixtureKey, extrasFixturesState)
+          case 'expressHttpRequest': {
+            mutateTestFixture(
+              fixtureKey,
+              extrasFixturesState instanceof Object
+                ? make_expressHttpRequest(
+                    extrasFixturesState
+                  )
+                : make_expressHttpRequest()
             )
-            break
-          case 'nextApiResponse':
-            fixtures = make_nextApiResponse(
-              mutateTestFixture(fixtureKey, extrasFixturesState)
-            )
-            break
-          case 'expressHttpRequest':
-            fixtures = make_expressHttpRequest(
-              mutateTestFixture(fixtureKey, extrasFixturesState)
-            )
-            fixtures.res = make_expressHttpResponse(
-              mutateTestFixture(fixtureKey, {})
-            )
-            break
-          case 'expressHttpResponse':
+
+            const fixture = state.allFixtures[fixtureKey]
+
             /* eslint-disable-next-line */
-            if ($__cachedExpressJSResponse !== null) {
+            if ($__cachedExpressJSResponse) {
               /* eslint-disable-next-line */
-              state.allFixtures[fixtureKey] = $__cachedExpressJSResponse
-              fixtures = mutateTestFixture(fixtureKey, extrasFixturesState)
-            } else {
-              fixtures = make_expressHttpResponse(
-                mutateTestFixture(fixtureKey, extrasFixturesState)
+              fixture.res = $__cachedExpressJSResponse;
+              /* eslint-disable-next-line */
+              $__cachedExpressJSResponse.req = fixture;
+            }
+
+            /* eslint-disable-next-line */
+            if ($__cachedExpressJSRequest === null) {
+              /* eslint-disable-next-line */
+              $__cachedExpressJSRequest = fixture;
+            }
+
+            break
+          }
+          case 'expressHttpResponse': {
+            mutateTestFixture(
+              fixtureKey,
+              make_expressHttpResponse(
+                extrasFixturesState
               )
+            )
+
+            const fixture = state.allFixtures[fixtureKey]
+
+            /* eslint-disable-next-line */
+            if ($__cachedExpressJSRequest) {
+              /* eslint-disable-next-line */
+              fixture.req = $__cachedExpressJSRequest
+              /* eslint-disable-next-line */
+              $__cachedExpressJSRequest.res = fixture
+            }
+
+            /* eslint-disable-next-line */
+            if ($__cachedExpressJSResponse === null) {
+              /* eslint-disable-next-line */
+              $__cachedExpressJSResponse = fixture;
             }
             break
+          }
           case 'expressNext':
             if (typeof extrasFixturesState === 'function' ||
               ('mock' in extrasFixturesState)) {
@@ -989,27 +994,24 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
                 'second argument: `extraFixturesState` is not a Jest spy function'
               )
             }
-            fixtures = make_expressNext(
-              extrasFixturesState
+
+            mutateTestFixture(
+              fixtureKey,
+              make_expressNext(
+                extrasFixturesState
+              )
             )
             break
           default:
-            fixtures = mutateTestFixture(fixtureKey, extrasFixturesState)
+            return state.allFixtures[fixtureKey] || {}
         }
-      } else {
-        fixtures = state.allFixtures[fixtureKey]
       }
     }
 
-    return fixtures
+    return state.allFixtures[fixtureKey] || {}
   }
   const mutateTestFixture = (fixtureKey, currentFixtureState = {}) => {
-    const formerFixtureState = state.allFixtures[fixtureKey]
-    state.allFixtures[fixtureKey] = Object.assign(
-      {},
-      formerFixtureState,
-      currentFixtureState || {}
-    )
+    state.allFixtures[fixtureKey] = currentFixtureState
   }
 
   beforeAll(() => {
@@ -1044,13 +1046,15 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
     }
 
     /* eslint-disable-next-line */
-    const [, fixtureKeys] = /\|(?:[ ]+)\[fixture\:([^\]]{1,}?)\](?:\s{0,})?$/.exec(
+    const [, fixtureKeys] = /\|(?:[\s]+)\[fixture\:([^\]]{1,}?)\](?:\s{0,})$/.exec(
       currentTestName.trim()
     ) || ['', '']
 
     if (fixtureKeys.trim() !== '') {
       fixtureKeys.replace(/ /g, '').trim().split(',').forEach((fixtureKey) => {
-        state.allFixtures[fixtureKey] = __fixturesCacheClone[fixtureKey]
+        if (fixtureKey in $fixtures) {
+          state.allFixtures[fixtureKey] = __fixturesCacheClone[fixtureKey]
+        }
       })
     } else {
       state.allFixtures = __fixturesCacheClone
@@ -1060,7 +1064,14 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
   afterEach(() => {
     state.allFixtures = {}
     /* eslint-disable-next-line */
-    $__cachedExpressJSResponse = null
+    if ($__cachedExpressJSResponse) {
+      /* eslint-disable-next-line */
+      $__cachedExpressJSResponse.req = null
+      /* eslint-disable-next-line */
+      $__cachedExpressJSResponse = null
+
+      $__cachedExpressJSResponse.app = null
+    }
 
     if (resetAfterEach) {
       jest.resetAllMocks()
@@ -1146,26 +1157,47 @@ export const provisionMockedJSConsoleLoggingForTests = (
         }
       }
 
-      consoleAPIsToMock.forEach((api) => {
-        global.console[api] = jest.fn(
-          log.bind(null, currentTestName, api)
-        )
-      })
+      if (loggingStrategy !== $NORMAL_LOGGING) {
+        consoleAPIsToMock.forEach((api) => {
+          global.console[api] = jest.fn(
+            log.bind(null, currentTestName, api)
+          )
+        })
+      }
     }
   })
 
   afterEach(() => {
-    if (typeof window === 'undefined') {
-      global.console = new _Console(process.stdout, process.stderr)
+    let _console
 
-      if (logsBuffer.length > 0) {
-        if (loggingStrategy === $DELAYED_LOGGING) {
-          logsBuffer.forEach(({ type, messages }) => {
-            console[type](...messages)
-          })
+    if (typeof global !== 'undefined' &&
+      Boolean(global.console)) {
+      _console = global.console
+      global.console = new _Console(
+        process.stdout,
+        process.stderr
+      )
+    }
+
+    if (logsBuffer.length === 0) {
+      return
+    }
+
+    if (loggingStrategy !== $NORMAL_LOGGING) {
+      consoleAPIsToMock.forEach((api) => {
+        if (typeof _console[api].mockClear === 'function') {
+          _console[api].mockClear()
         }
-        logsBuffer = []
+      })
+
+      _console = null
+
+      if (loggingStrategy === $DELAYED_LOGGING) {
+        logsBuffer.forEach(({ type, messages }) => {
+          console[type](...messages)
+        })
       }
+      logsBuffer = []
     }
   })
 

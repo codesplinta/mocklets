@@ -2,13 +2,15 @@
 
 # mocklets
 
-Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for [**Jest**](https://jestjs.io/). This library creates a seamless bridge between **Jest**, **JSDOM** and **Popular thrid-party JS libraries** (e.g. Nextjs, react-hook-form, ExpressJS e.t.c ) used for building apps such that you don't have to think about how and what you need/require to setup your testing space to write tests.
+This package helps you write tests using **Jest** (and **Vitest** - coming soon!) with much less boilerplate than you are currently used to. Much of this boilerplate is in the mocks you have to setup and use in your tests.
+
+Reusable standard mocks (and [fakes](https://blog.pragmatists.com/test-doubles-fakes-mocks-and-stubs-1a7491dfa3da)) for popular browser APIs, Node.js APIs and framework/library objects for [**Jest**](https://jestjs.io/). This library creates a seamless bridge between **Jest**, **JSDOM** and **Popular Thrid-party JS libraries** (e.g. `fetch()`, `localStorage`, `console.log()`, `window.open()`, `window.confirm()`, `new ResizeObserver()`, [MUI](https://mui.com/material-ui/getting-started/), [Nextjs](https://nextjs.org/docs), [react-hook-form](https://react-hook-form.com), [ExpressJS](https://expressjs.com/en/5x/api.html#express) e.t.c) used for building apps such that you don't have to think about how and what you need/require to setup your testing space to write tests.
 
 You can now write your **Jest** tests a lot more faster and better than before.
 
 ## Motivation
 
-Everyone knows how hard software testing setup can be. When it comes to the [testing pyramid](https://www.perfecto.io/blog/testing-pyramid) or [testing polygon](https://example.com), the most amount of work to be done is in creating fixtures (like mocks and fakes) and it can be quite daunting.
+Everyone knows how hard software testing setup can be. When it comes to the [testing pyramid](https://www.perfecto.io/blog/testing-pyramid) or [testing polygon](https://x.com/isocroft/status/1834250591456927848), the most amount of work to be done is in creating fixtures (like mocks and fakes) and it can be quite daunting.
 
 The very popular testing frameworks for unit testing and e-to-e tests are good at providing certain building blocks for creating mocks/fakes but how often do we have to rebuild/reconstruct the same building blocks to create the same exact (usually from scratch) materials in each test suite in order to make [test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) (e.g. mocks/stubs(spies)/fakes) available for different JavaScript software projects ?
 
@@ -70,13 +72,13 @@ jest.mock('react-hook-form', () => ({
   ...jest.requireActual('react-hook-form')
 }))
 
-const stubSubmit = jest.fn() as unknown as SubmitHandler<{ id: number }>;
-
 describe('Tests for my custom React form', () => {
 
   const {
     $setSpyOn_useForm_withMockImplementation
   } = provisionMockedReactHookFormForTests_withAddons()
+
+  const stubSubmit = jest.fn() as unknown as SubmitHandler<{ id: number }>;
 
   beforeEach(() => {
     if ('mockClear' in stubSubmit
@@ -268,7 +270,7 @@ jest.mock('fs', () => ({
  */
 provisionMockedNodeJSFileSystemForTests((mock, path) => {
   const expressJSPublicFolderPath = path.resolve(
-    path.join(__dirname, '../../../../'), 'public'
+    path.join(__dirname, '../../../../public')
   )
 
   mock({
@@ -280,7 +282,7 @@ provisionMockedNodeJSFileSystemForTests((mock, path) => {
           ctime: new Date(1411609054470), // Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
           mtime: new Date(1411609054470) // Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
         }),
-        '.DS_store': { mode: parseInt('444', 8), content: '' },
+        '.DS_store': mock.file({ mode: 33188, content: '', birthtime: new Date() }),
         'pixies.png': Buffer.from([8, 6, 7, 5, 3, 0, 9])
       }
     })
@@ -334,7 +336,7 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
   );
 
   test(
-    "should send error as http response to client if file doesn't exist | [expressHttpRequest, expressHttpResponse, expressNext]",
+    "should send error as http response to client if file doesn't exist | [fixture: expressHttpRequest, expressHttpResponse, expressNext]",
     () => {
       /* @NOTE: Arrange */
       const req  = getTestFixture('expressHttpRequest', {
@@ -358,6 +360,9 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
       })
       const nextErrorSpy = jest.fn()
       const next = getTestFixture('expressNext',  nextErrorSpy)
+
+      /* INFO: Needed by the ExpressJS fake implementation of `sendFile()` */
+      req.next = next;
 
       /* @NOTE: Act */
       getFile(req, res, next)
@@ -385,7 +390,7 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
   })
 
   test(
-    "should send file as http response to client if file exists | [expressHttpRequest, expressHttpResponse, expressNext]",
+    "should send file as http response to client if file exists | [fixture: expressHttpRequest, expressHttpResponse, expressNext]",
     () => {
       /* @NOTE: Arrange */
       const req  = getTestFixture('expressHttpRequest', {
@@ -401,6 +406,8 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
       const nextErrorSpy = jest.fn()
       const next = getTestFixture('expressNext',  nextErrorSpy)
 
+      /* INFO: Needed by the ExpressJS fake implementation of `sendFile()` */
+      req.next = next;
 
       /* @NOTE: Act */
       getFile(req, res, next)
@@ -851,7 +858,7 @@ const handle = provisionMockedWebSocketClientAndServerForTests(
   (serverInstance) => {
     serverInstance.on('connection', (socket) => {
       socket.on('message', () => {
-        // @TODO: Provide actual implementation later
+        // @TODO: Provide actual implementation later on...
         socket.send('PING! PING!!')
       });
     })
@@ -939,7 +946,7 @@ export default async function getTodos () {
 
     return JSON.parse(jsonText);
   } catch (error) {
-    if (error instanceof Error) {
+    if (!(error instanceof SyntaxError)) {
       console.error(error.message);
     }
   }

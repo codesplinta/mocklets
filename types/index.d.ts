@@ -598,7 +598,7 @@ declare module 'mocklets' {
     resetAfterEach?: 1 | 0
   ): {
     getTestFixtures<F extends Function | Record<string, unknown>>(
-      fixtureKey?: 'expressHttpRequest' | 'expressHttpResponse' |  'expressNext' | 'nextApiRequest' | 'nextApiResponse' & string,
+      fixtureKey?: 'expressHttpRequest' | 'expressHttpResponse' |  'expressNext' | (string & {}),
       extraFixturesState?: Partial<F>
     ): F,
     mutateTestFixture<F extends Record<string, unknown>>(

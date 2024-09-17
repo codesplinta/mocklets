@@ -480,9 +480,9 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     prefetch: mockRouterPrefetch,
     replace: mockRouterReplace,
     events: {
-      on: jest.spyOn(emitter, 'on'),
-      off: jest.spyOn(emitter, 'off'),
-      emit: jest.spyOn(emitter, 'emit')
+      on: jest.fn(emitter.on),
+      off: jest.fn(emitter.off),
+      emit: jest.fn(emitter.emit)
     },
     isReady: false,
     isLocaleDomain: false,

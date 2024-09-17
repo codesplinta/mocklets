@@ -1,5 +1,5 @@
 <a name="0.0.6"></a>
-# 0.0.6 (2024-09-20)
+# 0.0.6 (2024-09-18)
 
 ### Feature Added
 - Added `provisionMockedNextJSRouterForTests_withAddons()` helper function

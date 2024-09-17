@@ -211,14 +211,10 @@ const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
     if (fakeOrMock.length === 0) {
       /* @HINT: Avoid automatic hoisting by Jest & Babel */
       jest.doMock(packageOrModuleName, fakeOrMock)
+      if (typeof require === 'function') {
+        require(packageOrModuleName)
+      }
     }
-  } else {
-    const packageOrModule = global && typeof require === 'function'
-      ? require(packageOrModuleName)
-      : { default: null }
-    packageOrModule.default = jest.fn(
-      () => fakeOrMock
-    )
   }
 
   afterEach(() => {
@@ -226,14 +222,10 @@ const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
       if (fakeOrMock.length === 0) {
         /* @HINT: Silence automatic hoisting by Jest & Babel */
         jest.doMock(packageOrModuleName, fakeOrMock)
+        if (typeof require === 'function') {
+          require(packageOrModuleName)
+        }
       }
-    } else {
-      const packageOrModule = global && typeof require === 'function'
-        ? require(packageOrModuleName)
-        : { default: null }
-      packageOrModule.default = jest.fn(
-        () => fakeOrMock
-      )
     }
   })
 }
@@ -482,7 +474,7 @@ export const provisionMockedAdonisJSv4CacheForTests = () => {
   const Cache = fakeAdonisJSCachePackageFactory()
   provisionFakeJSObject(
     'adonis-cache',
-    new Cache()
+    () => new Cache()
   )
 }
 
@@ -630,7 +622,7 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
   /* @NOTE: This doesn't work for now */
   provisionFakeJSObject(
     'react-hook-form',
-    hookFormFactory()
+    hookFormFactory
   )
 
   return {
@@ -685,7 +677,7 @@ export const provisionMockedMaterialUIKitForTests = () => {
   /* @HINT: This doesn't work for now */
   provisionFakeJSObject(
     '@mui/material',
-    muiFactory()
+    muiFactory
   )
 
   return {
@@ -719,15 +711,36 @@ export const provisionMockedPinoLoggerForTests = () => {
 /**
  * A helper utility that enables the use of mock server-side logger: `winston` within tests
  *
- * @return void
+ * @return {{ $setSpyOn_winstonLogger_withMockImplementation: Function }}
  * @api public
  */
 export const provisionMockedWinstonLoggerForTests = () => {
+  const winstonFactory = fakeWinstonLoggerPackageFactory()
   /* @NOTE: This doesn't work for now */
   provisionFakeJSObject(
     'winston',
-    fakeWinstonLoggerPackageFactory()
+    winstonFactory
   )
+
+  return {
+    $setSpyOn_winstonLogger_withMockImplementation () {
+      const createLogger = jest.spyOn(
+        require('winston'),
+        'createLogger'
+      )
+
+      createLogger.mockImplementation(function () {
+        return {
+          info: jest.fn(),
+          warn: jest.fn(),
+          error: jest.fn(),
+          debug: jest.fn(),
+          log: jest.fn(),
+          add: jest.fn()
+        }
+      })
+    }
+  }
 }
 
 /**
@@ -1083,8 +1096,7 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
   })
 
   return {
-    getTestFixtures,
-    mutateTestFixture
+    getTestFixtures
   }
 }
 

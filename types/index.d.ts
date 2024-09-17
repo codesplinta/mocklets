@@ -552,10 +552,12 @@ declare module 'mocklets' {
 /**
  * A helper utility that enables the use of mock server-side logger: `winston` within tests
  *
- * @return void
+ * @return {{ $setSpyOn_winstonLogger_withMockImplementation: Function }}
  * @api public
  */
-  export function provisionMockedWinstonLoggerForTests(): void;
+  export function provisionMockedWinstonLoggerForTests(): {
+    $setSpyOn_winstonLogger_withMockImplementation(): void
+  };
 /**
  * A helper utility that enables the use of mock server-side logger: `pino` within tests
  *
@@ -600,11 +602,7 @@ declare module 'mocklets' {
     getTestFixtures<F extends Function | Record<string, unknown>>(
       fixtureKey?: 'expressHttpRequest' | 'expressHttpResponse' |  'expressNext' | (string & {}),
       extraFixturesState?: Partial<F>
-    ): F,
-    mutateTestFixture<F extends Record<string, unknown>>(
-      fixtureKey: string,
-      currentFixtureState?: Partial<F>
-    ): void
+    ): F
   }
 
 /**

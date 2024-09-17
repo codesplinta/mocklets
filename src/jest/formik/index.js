@@ -38,11 +38,9 @@ export const fakeFormikReactPackageFactory = () => {
 
   const _isValidating = false
 
-  const originalModule = jest.requireActual('formik')
   return () => {
     return ({
       __esModule: true,
-      ...originalModule,
       useFormikContext: jest.fn(),
       useFormik: jest.fn(({ initialValues, onSubmit }) => {
         if (isEmpty(_values)) {

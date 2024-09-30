@@ -63,11 +63,19 @@ export const fakeFormikReactPackageFactory = () => {
           get submitCount () {
             return _submitCount
           },
+          handleChange (e) {
+            if (e && e.target) {
+              _values[e.target.name] = e.target.value
+            }
+          },
+          handleSubmit () {
+            _isSubmitting = true
+            return onSubmit(_values)
+          },
           submitForm () {
             return new Promise((resolve, reject) => {
               try {
-                _isSubmitting = true
-                const result = onSubmit(_values)
+                const result = this.handleSubmit()
 
                 if (isAsync(onSubmit) || isPromise(result)) {
                   result.then(resolve).catch(reject)

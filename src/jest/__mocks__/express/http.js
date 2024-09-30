@@ -1,8 +1,8 @@
-const path = require('path')
-const util = require('util')
-const Stream = require('stream')
-const EventEmitter = require('events').EventEmitter
-const STATUS_CODES = require('http').STATUS_CODES
+import Stream from 'stream'
+import { EventEmitter } from 'events'
+import { STATUS_CODES } from 'http'
+import * as path from 'path'
+import * as util from 'util'
 // const toPromise = (val) => (val instanceof Promise ? val : Promise.resolve(val))
 
 /**
@@ -11,6 +11,55 @@ const STATUS_CODES = require('http').STATUS_CODES
  */
 
 function noop () {}
+
+/**
+ * isEmpty:
+ *
+ * @param {Object} objectValue
+ *
+ * @returns {Boolean}
+ */
+const isEmpty = (objectValue) => {
+  if (!objectValue || typeof objectValue !== 'object') {
+    return true
+  }
+
+  for (const prop in objectValue) {
+    if (Object.prototype.hasOwnProperty.call(objectValue, prop)) {
+      return false
+    }
+  }
+
+  return JSON.stringify(objectValue) === JSON.stringify({})
+}
+
+/**
+ * Convert URL query string to object literal
+ *
+ * @param {String} url
+ *
+ * @returns {Object}
+ */
+const reduceUrlFromQueryString = (url) => {
+  if (typeof url !== 'string') {
+    return {}
+  }
+
+  const $url = url.startsWith('?') ? url : '?' + url
+  return ($url || '').slice(($url || '').indexOf('?')).slice(
+    1
+  ).split(
+    '&'
+  ).map((querySlice) => {
+    return querySlice.split('=')
+  }).reduce((queryPairMap, previousQuerySlicePair) => {
+    const [key, value] = previousQuerySlicePair
+    queryPairMap[key] = decodeURIComponent(value).includes(',')
+      ? value.split(',')
+      : value
+    return queryPairMap
+  }, {})
+}
 
 /*
  *  The MurmurHash3 algorithm was created by Austin Appleby.  This JavaScript port was authored
@@ -2386,7 +2435,7 @@ function sendfile (res, file, options, callback) {
 
 let _app
 
-module.exports = {
+export const expressjsFakesFactory = {
   make_expressNext: (callback) => {
     const next = (err) => {
       // Calling the fallthrough function with a string may be valid:-
@@ -2410,13 +2459,12 @@ module.exports = {
     headers = {},
     params = {},
     query = {},
-    protocol = 'http',
     method = 'GET',
-    url = '',
-    port = '',
+    url = 'http://localhost:3650',
+    port = '3650',
     xhr = false,
     fresh = false,
-    originalUrl = '',
+    originalUrl = 'http://localhost:3650',
     signedCookies = {}
   } = {}) => {
     const today = new Date()
@@ -2431,7 +2479,7 @@ module.exports = {
       pragma: 'no-cache',
       'cache-control': 'no-cache'
     }, headers)
-    const { hostname, pathname } = ((new URL(url || originalUrl)))
+    const { hostname, protocol, pathname, query: $query } = ((new URL(url || originalUrl)))
     const request = {
       body,
       protocol,
@@ -2445,6 +2493,7 @@ module.exports = {
       writableEnded: false,
       writableFinished: false,
       maxHeadersCount: 2000,
+      headersSent: false,
       reusedSocket: false
     }
 
@@ -2453,8 +2502,8 @@ module.exports = {
         const accept = _headers.accept
         return accept.split(',').map((acceptBit) => {
           const { value, quality } = acceptParams(acceptBit)
-          const { type, subtype } = value.split('/')
-          return { value, quality, type, subtype }
+          const [type, subtype] = value.trim().split('/')
+          return { value: value.trim(), quality, type, subtype }
         })
       },
       configurable: false,
@@ -2466,7 +2515,7 @@ module.exports = {
         const acceptLanguage = _headers['accept-language']
         return acceptLanguage.split(',').map((acceptBit) => {
           const { value } = acceptParams(acceptBit)
-          return value
+          return value.trim()
         })
       },
       configurable: false,
@@ -2478,7 +2527,7 @@ module.exports = {
         const acceptCharset = _headers['accept-charset']
         return acceptCharset.split(',').map((acceptBit) => {
           const { value } = acceptParams(acceptBit)
-          return value
+          return value.trim()
         })
       },
       configurable: false,
@@ -2659,7 +2708,7 @@ module.exports = {
     request.ips = [ip]
     request.signedCookies = JSON.parse(JSON.stringify(signedCookies))
     request.cookies = JSON.parse(JSON.stringify(cookies))
-    request.query = query
+    request.query = isEmpty(query) ? reduceUrlFromQueryString($query) : query
     request.stale = !fresh
     request.url = url
     request.originalUrl = originalUrl
@@ -2781,7 +2830,9 @@ module.exports = {
     })
 
     emitter.is = jest.fn(function (type) {
-      if (typeof type !== 'string') {
+      if (typeof type !== 'string' ||
+        method.toLowerCase() === 'get' ||
+          method.toLowerCase() === 'head') {
         return false
       }
 
@@ -2897,8 +2948,7 @@ module.exports = {
       writableEnded: false,
       writableFinished: false,
       finished: false,
-      headersSent: false,
-      req: null
+      headersSent: false
     }
 
     Object.defineProperty(response, 'charset', {
@@ -2911,7 +2961,7 @@ module.exports = {
         )
       },
       get () {
-
+        return _charset
       },
       configurable: false,
       enumerable: true
@@ -2957,7 +3007,7 @@ module.exports = {
 
     /* @HINT: http.ServerResponse specific methods */
     /* @CHECK: https://nodejs.org/api/http.html#class-httpserverresponse */
-    emitter.flushHeaders = jest.fn(() => {
+    emitter.flushHeaders = jest.fn(function () {
       this.headersSent = true
     })
 

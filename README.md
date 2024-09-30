@@ -54,7 +54,7 @@ jest.mock('react', () => ({
 const $useRef = <jest.Mock<typeof useRef>>jest.fn(() => ({}))
 ```
 
-In the same vein, we can also hoist **react-hook-form** (when using **mocklets**) by doing this too:
+In the same vein, we can also provision **react-hook-form** hooks (when using **mocklets**) by doing this too:
 
 ```tsx
 import type { UseFormReturn, SubmitHandler } from 'react-hook-form';
@@ -124,6 +124,8 @@ The philosophy which **mocklets** operates on is that of avoiding mocks ([test d
 
 This layers of preference is due to the fact that tests have much hgher reliability when either the real implementation or a fake implmentation is used when testing.
 
+Using a fake implementation boosts the confidence of a software engineer in the tests they've written so that it is safer and faster to make changes without worry.
+
 ## Some Basic Example (on the browser)
 >src/greetingMaker/index.js
 ```js
@@ -166,7 +168,7 @@ describe('{greetingMaker(..)} | Unit Test Suite', () => {
    * 
    * mock/fake for `new Date()`
    */
-  const timekeeper = provisionFakeDateForTests(
+  const ticker = provisionFakeDateForTests(
     new Date(2024, 0, 2, 12, 34, 55),
     $EXECUTION.IGNORE_RESET_AFTER_EACH_TEST_CASE
   );
@@ -184,7 +186,8 @@ describe('{greetingMaker(..)} | Unit Test Suite', () => {
   });
 
   test('it should return the correct greeting text given a valid format', () => {
-
+    const timekeeper = ticker.timePiece;
+ 
     timekeeper.travel(new Date(2024, 1, 2, 10, 22, 27))
     window.localStorage.setItem('greeting:format', 'old-fashioned')
 
@@ -257,9 +260,10 @@ import  {
   $EXECUTION
 } from 'mocklets'
 
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs')
-}));
+function addBodyParserForTests (app) {
+  const bodyParser = require('body-parser');
+  app.use(bodyParser.json());
+}
 
 /* @HINT: 
  *
@@ -361,14 +365,17 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
       const nextErrorSpy = jest.fn()
       const next = getTestFixture('expressNext',  nextErrorSpy)
 
-      /* INFO: Needed by the ExpressJS fake implementation of `sendFile()` */
+      /* @INFO: Setup boddy parser for the test for the `getFile` route handler  */
+      addBodyParserForTests(req.app)
+
+      /* @INFO: Needed by the ExpressJS fake implementation of `sendFile()` */
       req.next = next;
 
-      /* @NOTE: Act */
+      /* @NOTE: Act - Execute the ExpressJS route handler */
       getFile(req, res, next)
 
 
-      /* @NOTE: Assert */
+      /* @NOTE: Assert - Validate assertions */
       expect(req.sendFile).toHaveBeenCalled();
       expect(req.sendFile).toHaveBeenCalledWith(
         'open-spacey.txt',
@@ -406,14 +413,17 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
       const nextErrorSpy = jest.fn()
       const next = getTestFixture('expressNext',  nextErrorSpy)
 
-      /* INFO: Needed by the ExpressJS fake implementation of `sendFile()` */
+      /* @INFO: Setup boddy parser for the test for the `getFile` route handler  */
+      addBodyParserForTests(req.app)
+
+      /* @INFO: Needed by the ExpressJS fake implementation of `sendFile()` */
       req.next = next;
 
-      /* @NOTE: Act */
+      /* @NOTE: Act - Execute the ExpressJS route handler */
       getFile(req, res, next)
 
 
-      /* @NOTE: Assert */
+      /* @NOTE: Assert - Validate assertions */
       expect(req.sendFile).toHaveBeenCalled();
       expect(req.sendFile).toHaveBeenCalledWith(
         'open-scape.txt',
@@ -834,7 +844,7 @@ import {
   $EXECUTION
 } from 'mocklets';
 
-import { createWebSocketClient  } from '../../src/chatRoom'
+import { createWebSocketClient } from '../../src/chatRoom'
 
 /* @HINT:
  *
@@ -933,7 +943,7 @@ export default async function getTodos () {
   let result = null;
 
   try {
-    result = await window.fetch('https://service.tryoptar.com/api/v1/todos', {
+    result = await window.fetch('https://service.tryoptics.com/api/v1/todos', {
       method: 'GET',
       mode: 'no-cors'
     });
@@ -963,6 +973,8 @@ import {
   $EXECUTION
 } from 'mocklets';
 
+import { setupServer } from 'msw/node'
+
 import getTodos from '../../src/apis/getTodos'
 
 /* @HINT:
@@ -981,19 +993,21 @@ provisionMockedJSConsoleLoggingForTests(
  * 
  */
 provisionMockedHttpServerForTests((http) => {
-  return [
-    http.get('https://service.tryoptar.com/api/v1/todos', () => {
+  const handlers = [
+    http.get('https://service.tryoptics.com/api/v1/todos', () => {
       console.info('Captured a "GET /todos" request')
       return new Response('[ todos! ]')
     }),
-    http.delete('https://service.tryoptar.com/api/v1/todos/:id', ({ params }) => {
+    http.delete('https://service.tryoptics.com/api/v1/todos/:id', ({ params }) => {
       console.log(`Captured a "DELETE /todos/${params.id}" request`)
     }),
-    http.head('https://service.tryoptar.com/api/v1', () => {
+    http.head('https://service.tryoptics.com/api/v1', () => {
       // Respond with a network error.
       return Response.error()
     })
   ]
+
+  return setupServer(...handlers);
 });
 
 describe('Test api comms', () => {
@@ -1053,7 +1067,7 @@ Run all the following command (in order they appear) below:
 
 $ npm run lint
 
-$ npm run build
-
 $ npm run test
+
+$ npm run build
 ```

@@ -5,10 +5,11 @@
 /// <reference types="./next-auth-custom" />
 /// <reference types="./react-hook-form-custom" />
 
-// Type definitions for mocklets v0.0.6
+// Type definitions for mocklets v0.0.7
 // Project: https://github.com/codesplinta/mocklets
 
 import { VirtualConsole } from 'jsdom';
+import { SetupServerApi } from 'msw/lib/node';
 
 declare global {
   interface Window {
@@ -411,7 +412,7 @@ declare module 'mocklets' {
  * @api public
  */
   export function provisionMockedHttpServerForTests(
-    mockFactoryCallback: (router: import('.msw').router, passthrough?: typeof import('.msw').passthrough) => void,
+    mockFactoryCallback: (router: import('.msw').router, passthrough?: typeof import('.msw').passthrough) => import('.msw').SetupServerApi,
     type?: 'http' | 'graphql'
   ): void;
 /**
@@ -580,13 +581,13 @@ declare module 'mocklets' {
  *
  * @see https://stackoverflow.com/a/47781245
  * 
- * @return Timekeeper | null
+ * @return `{ timePiece: Timekeeper | null }`
  * @api public
  */
   export function provisionFakeDateForTests(
     date: Date,
     resetAfterEach?: 1 | 0
-  ): Timekeeper | null;
+  ): { readonly timePiece : Timekeeper | null };
 
 /**
  * A helper utility that enables the use of fixtures loaded from this package and elsewhere
@@ -600,7 +601,7 @@ declare module 'mocklets' {
     resetAfterEach?: 1 | 0
   ): {
     getTestFixtures<F extends Function | Record<string, unknown>>(
-      fixtureKey?: 'expressHttpRequest' | 'expressHttpResponse' |  'expressNext' | (string & {}),
+      fixtureKey?: 'nextApiRequest' | 'nextApiResponse' | 'expressHttpRequest' | 'expressHttpResponse' |  'expressNext' | (string & {}),
       extraFixturesState?: Partial<F>
     ): F
   }

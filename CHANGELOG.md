@@ -1,3 +1,18 @@
+<a name="0.1.0"></a>
+# 0.1.0 (2024-09-30)
+
+### Feature Added
+- Refactored code logic to only include dynamic `require()` calls for testing-related third-party packages
+- Added support for **NextJS** API routes request/response mock object
+- [Breaking Change]; Public APIs modified: `provisionMockedMaterialUIKitForTests()`, `provisionMockedHttpServerForTests()`
+
+### WIP (Work-in-progress)
+- Adding `middleware` fake **Redux**
+- Adding **NextJS** middleware request/response mock objects
+
+### Bug Fixes
+- Fixed invalid build in v0.0.6
+
 <a name="0.0.6"></a>
 # 0.0.6 (2024-09-18)
 

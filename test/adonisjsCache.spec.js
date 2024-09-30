@@ -2,11 +2,11 @@ import { fakeAdonisJSCachePackageFactory } from '../src/jest/adonisjs-cache'
 import { provisionLocalClassInstance } from './.helpers/utils'
 /* eslint-env jest */
 
-describe(() => {
+describe('Tests for AdonisJS Cache package', () => {
   const CacheClass = fakeAdonisJSCachePackageFactory()
   const cacheInstance = provisionLocalClassInstance(CacheClass)
 
-  it('...', () => {
-    expect(cacheInstance.add()).resolve.toBe(true)
+  it('should assert that `Cache.addd(...)` methods resolves correctly', async () => {
+    await expect(cacheInstance.add('session_uid', 'xM6ye&7hd78', 2)).resolves.toBe(true)
   })
 })

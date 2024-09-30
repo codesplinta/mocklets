@@ -1,6 +1,7 @@
 import fs from 'fs'
 import babel from '@rollup/plugin-babel'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
+import resolve from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
 import strip from '@rollup/plugin-strip'
 import json from '@rollup/plugin-json'
 import terser from '@rollup/plugin-terser'
@@ -16,32 +17,36 @@ export default {
   input: 'index.js',
   external: externalGlobals,
   plugins: [
-    nodeResolve({
-	  extensions
-    }),
     babel({
-	  extensions,
-	  babelHelpers: 'bundled',
-	  exclude: 'node_modules/**'
+	    extensions,
+	    babelHelpers: 'bundled',
+	    exclude: 'node_modules/**'
     }),
     strip({
-	  functions: devHelpersToRemove
+	    functions: devHelpersToRemove
     }),
     json(),
-    terser()
+    terser(),
+    commonjs({
+      ignoreDynamicRequires: true,
+      ignoreGlobal: true
+    }),
+    resolve({
+      extensions
+    }),
   ],
   output: [
     {
-	  name: pkg.name,
-	  file: pkg.main,
-	  format: 'cjs',
-	  sourcemap: true
+	    name: pkg.name,
+	    file: pkg.main,
+	    format: 'cjs',
+	    sourcemap: true
     },
     {
-	  name: pkg.name,
-	  file: pkg.module,
-	  format: 'es',
-	  sourcemap: true
+	    name: pkg.name,
+	    file: pkg.module,
+	    format: 'es',
+	    sourcemap: true
     }
   ]
 }

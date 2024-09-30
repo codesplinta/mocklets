@@ -17,5 +17,5 @@ export default function greetingMaker (subjectFullName = 'John Doe', subjectTitl
       salutation = "Good day";
     }
  
-    return `${saluation}, ${subjectTitle} ${subjectFullName}`;
+    return `${salutation}, ${subjectTitle} ${subjectFullName}`;
  }

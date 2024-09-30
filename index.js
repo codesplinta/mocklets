@@ -13,21 +13,17 @@ import { fakeIntersectionObserverFactory } from './src/jest/IntersectionObserver
 import { fakeResizeObserverFactory } from './src/jest/ResizeObserver'
 import { fakeStorageInstanceFactory } from './src/jest/browserStorage'
 
-// @CHECK: https://mswjs.io/docs/basics/mocking-responses
-import { http, graphql, passthrough } from 'msw'
-import { setupServer } from 'msw/node'
+import {
+  /* eslint-disable-next-line */
+  nextjsFakesFactory
+} from './src/jest/__mocks__/next/api'
 
-// import { afterEach, beforeEach, afterAll } from '@jest/globals'
+import {
+  /* eslint-disable-next-line */
+  expressjsFakesFactory
+} from './src/jest/__mocks__/express/http'
 
-const $fixtures = require('./src/jest/__fixtures__')
-const {
-  /* eslint-disable-next-line */
-  make_expressNext,
-  /* eslint-disable-next-line */
-  make_expressHttpRequest,
-  /* eslint-disable-next-line */
-  make_expressHttpResponse
-} = require('./src/jest/__mocks__/express/http')
+import { $fixtures } from './src/jest/__fixtures__'
 
 const $DELAYED_LOGGING = 2
 const $NORMAL_LOGGING = -1
@@ -209,8 +205,9 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
 const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
   if (typeof fakeOrMock === 'function') {
     if (fakeOrMock.length === 0) {
-      /* @HINT: Avoid automatic hoisting by Jest & Babel */
+      /* @HINT: Silence automatic hoisting by Jest & Babel */
       jest.doMock(packageOrModuleName, fakeOrMock)
+
       if (typeof require === 'function') {
         require(packageOrModuleName)
       }
@@ -222,6 +219,7 @@ const provisionFakeJSObject = (packageOrModuleName, fakeOrMock) => {
       if (fakeOrMock.length === 0) {
         /* @HINT: Silence automatic hoisting by Jest & Babel */
         jest.doMock(packageOrModuleName, fakeOrMock)
+
         if (typeof require === 'function') {
           require(packageOrModuleName)
         }
@@ -292,11 +290,10 @@ export const provisionMockedDateForTests = (callback = () => Date.now(), resetAf
  * @api public
  */
 export const provisionFakeDateForTests = (date = new Date(), resetAfterEach = 1) => {
-  let timekeeper = null
+  /* @HINT: Lock Time */
+  let timekeeper = require('timekeeper')
 
   beforeAll(() => {
-    /* @HINT: Lock Time */
-    timekeeper = require('timekeeper')
     timekeeper.freeze(date)
   })
 
@@ -314,7 +311,11 @@ export const provisionFakeDateForTests = (date = new Date(), resetAfterEach = 1)
     timekeeper = null
   })
 
-  return timekeeper
+  return {
+    get timePiece () {
+      return timekeeper
+    }
+  }
 }
 
 /**
@@ -866,6 +867,7 @@ export const provisionMockedWebSocketClientAndServerForTests = (mockFactoryCallb
     server.close()
     server = null
     _server = null
+    WebSocket = null
   })
 
   beforeEach(() => {
@@ -881,6 +883,7 @@ export const provisionMockedWebSocketClientAndServerForTests = (mockFactoryCallb
     server.stop()
     server = null
     _server = null
+    WebSocket = null
   })
 
   return {
@@ -900,16 +903,21 @@ export const provisionMockedWebSocketClientAndServerForTests = (mockFactoryCallb
  * @api public
  */
 export const provisionMockedHttpServerForTests = (mockFactoryCallback, type = 'http') => {
-  let handlers = []
-
-  if (typeof mockFactoryCallback === 'function') {
-    handlers = mockFactoryCallback(
-      type === 'http' ? http : graphql,
-      passthrough
-    ) || []
+  let server = {
+    listen () {},
+    resetHandlers () {},
+    close () {}
   }
 
-  const server = setupServer(...handlers)
+  // @CHECK: https://mswjs.io/docs/basics/mocking-responses
+  const msw = require('msw')
+
+  if (typeof mockFactoryCallback === 'function') {
+    server = mockFactoryCallback(
+      type === 'http' ? msw.http : msw.graphql,
+      msw.passthrough
+    ) || []
+  }
 
   beforeAll(() => server.listen())
 
@@ -947,22 +955,36 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
     if (typeof fixtureKey !== 'undefined') {
       if (extrasFixturesState instanceof Object) {
         switch (fixtureKey) {
+          case 'nextApiRequest':
+            mutateTestFixture(
+              fixtureKey,
+              nextjsFakesFactory.make_nextApiRequest(
+                extrasFixturesState
+              )
+            )
+            break
+          case 'nextApiResponse':
+            mutateTestFixture(
+              fixtureKey,
+              nextjsFakesFactory.make_nextApiResponse(
+                extrasFixturesState
+              )
+            )
+            break
           case 'expressHttpRequest': {
             mutateTestFixture(
               fixtureKey,
               extrasFixturesState instanceof Object
-                ? make_expressHttpRequest(
+                ? expressjsFakesFactory.make_expressHttpRequest(
                     extrasFixturesState
                   )
-                : make_expressHttpRequest()
+                : expressjsFakesFactory.make_expressHttpRequest()
             )
 
             const fixture = state.allFixtures[fixtureKey]
 
             /* eslint-disable-next-line */
             if ($__cachedExpressJSResponse) {
-              /* eslint-disable-next-line */
-              fixture.res = $__cachedExpressJSResponse;
               /* eslint-disable-next-line */
               $__cachedExpressJSResponse.req = fixture;
             }
@@ -978,7 +1000,7 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
           case 'expressHttpResponse': {
             mutateTestFixture(
               fixtureKey,
-              make_expressHttpResponse(
+              expressjsFakesFactory.make_expressHttpResponse(
                 extrasFixturesState
               )
             )
@@ -989,8 +1011,6 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
             if ($__cachedExpressJSRequest) {
               /* eslint-disable-next-line */
               fixture.req = $__cachedExpressJSRequest
-              /* eslint-disable-next-line */
-              $__cachedExpressJSRequest.res = fixture
             }
 
             /* eslint-disable-next-line */
@@ -1010,7 +1030,7 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
 
             mutateTestFixture(
               fixtureKey,
-              make_expressNext(
+              expressjsFakesFactory.make_expressNext(
                 extrasFixturesState
               )
             )
@@ -1085,14 +1105,14 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
 
       $__cachedExpressJSResponse.app = null
     }
-
-    if (resetAfterEach) {
-      jest.resetAllMocks()
-    }
   })
 
   afterAll(() => {
     state.__fixturesCache = {}
+
+    if (resetAfterEach) {
+      jest.resetAllMocks()
+    }
   })
 
   return {

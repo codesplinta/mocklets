@@ -101,6 +101,11 @@ export const fakeIntersectionObserverFactory = () => (function () {
       this.root = options.root || null
       this.rootMargin = options.rootMargin || '0px 0px 0px 0px'
 
+      if (options.root !== this.root &&
+          this.root === null) {
+        options.root = null
+      }
+
       const viewPort = options.root === null || options.root.nodeType === 9
         ? window.document.documentElement
         : options.root
@@ -145,33 +150,41 @@ export const fakeIntersectionObserverFactory = () => (function () {
     }
 
     observe (target) {
-      this.entries.push({
-        isIntersecting: false,
-        target,
-        time: 0,
-        rootBounds: {
-          x: 0,
-          y: 0,
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0,
-          width: 0,
-          height: 0
-        },
-        intersectionRatio: 0.0,
-        intersectionRect: {
-          x: 0,
-          y: 0,
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0,
-          width: 0,
-          height: 0
-        },
-        boundingClientRect: target.getBoundingClientRect()
-      })
+      if (!target) {
+        throw new TypeError("Failed to execute 'observe' on 'IntersectionObserver': 1 argument required, but only 0 present.")
+      }
+
+      if (target instanceof window.HTMLElement) {
+        this.entries.push({
+          isIntersecting: false,
+          target,
+          time: 0,
+          rootBounds: {
+            x: 0,
+            y: 0,
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0
+          },
+          intersectionRatio: 0.0,
+          intersectionRect: {
+            x: 0,
+            y: 0,
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0
+          },
+          boundingClientRect: target.getBoundingClientRect()
+        })
+      } else {
+        throw new TypeError("Failed to execute 'observe' on 'IntersectionObserver': parameter 1 is not of type 'Element'.")
+      }
     }
 
     unobserve (target) {

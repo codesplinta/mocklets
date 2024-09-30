@@ -201,7 +201,8 @@ export const nextJSuseRouter = (eventsMap = {}) => {
   const emitter = mitt(eventsMap)
 
   const reduceUrlToQueryString = (url) => {
-    return (url || '').slice((url || '').indexOf('?')).slice(
+    const $url = url.startsWith('?') ? url : '?' + url
+    return ($url || '').slice(($url || '').indexOf('?')).slice(
       1
     ).split(
       '&'

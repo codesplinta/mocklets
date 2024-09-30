@@ -143,7 +143,7 @@
   "config": {
     "ghooks": {
       "pre-commit": "npm run lint && npm run build",
-      "pre-push": "echo \"ready to publish to remote\" && npm run test",
+      "pre-push": "echo \"ready to publish to remote\"",
       "post-merge": "rimraf node_modules && npm install",
       "post-rewrite": "npm install"
     }

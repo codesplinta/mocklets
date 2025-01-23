@@ -44,7 +44,7 @@ It is important to note that [**Jest module hoisting**](https://tigeroakes.com/p
 For instance, we can simply hoist **React** in **Jest** by doing this:
 
 ```ts
-import { useRef } from 'react';
+import React from 'react';
 
 jest.mock('react', () => ({
   ...jest.requireActual('react')

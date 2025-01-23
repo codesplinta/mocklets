@@ -635,9 +635,9 @@ export const provisionMockedElectronForTests_withAddons = () => {
         require('electron'),
         'app'
       )
-    },
+    }
   }
-};
+}
 
 /**
  * A helper utility that enables the use of mock react-hook-form package within tests that returns addons

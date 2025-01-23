@@ -201,24 +201,24 @@ export const nextJSuseRouter = (eventsMap = {}) => {
   const emitter = mitt(eventsMap)
 
   const reduceUrlToQueryString = (url) => {
-    if (typeof url !== "string" || url === "") {
-      return {};
+    if (typeof url !== 'string' || url === '') {
+      return {}
     }
-    const $url = url.startsWith('?') ? url : '?' + url;
+    const $url = url.startsWith('?') ? url : '?' + url
 
     return $url
-    .slice($url.indexOf('?'))
-    .slice(1)
-    .split('&')
-    .map((querySlice) => {
-      return querySlice.split('=')
-    }).reduce((queryPairMap, previousQuerySlicePair) => {
-      const [key, value] = previousQuerySlicePair
-      queryPairMap[key] = decodeURIComponent(value).includes(',')
-        ? decodeURIComponent(value).split(',')
-        : decodeURIComponent(value)
-      return queryPairMap
-    }, {})
+      .slice($url.indexOf('?'))
+      .slice(1)
+      .split('&')
+      .map((querySlice) => {
+        return querySlice.split('=')
+      }).reduce((queryPairMap, previousQuerySlicePair) => {
+        const [key, value] = previousQuerySlicePair
+        queryPairMap[key] = decodeURIComponent(value).includes(',')
+          ? decodeURIComponent(value).split(',')
+          : decodeURIComponent(value)
+        return queryPairMap
+      }, {})
   }
 
   const removeTrailingSlashOnPathname = (pathname) => {

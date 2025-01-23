@@ -201,18 +201,22 @@ export const nextJSuseRouter = (eventsMap = {}) => {
   const emitter = mitt(eventsMap)
 
   const reduceUrlToQueryString = (url) => {
-    const $url = url.startsWith('?') ? url : '?' + url
-    return ($url || '').slice(($url || '').indexOf('?')).slice(
-      1
-    ).split(
-      '&'
-    ).map((querySlice) => {
+    if (typeof url !== "string" || url === "") {
+      return {};
+    }
+    const $url = url.startsWith('?') ? url : '?' + url;
+
+    return $url
+    .slice($url.indexOf('?'))
+    .slice(1)
+    .split('&')
+    .map((querySlice) => {
       return querySlice.split('=')
     }).reduce((queryPairMap, previousQuerySlicePair) => {
       const [key, value] = previousQuerySlicePair
       queryPairMap[key] = decodeURIComponent(value).includes(',')
-        ? value.split(',')
-        : value
+        ? decodeURIComponent(value).split(',')
+        : decodeURIComponent(value)
       return queryPairMap
     }, {})
   }

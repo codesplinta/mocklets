@@ -2,6 +2,7 @@ import { fakeReactJSTransitionGroupPackageFactory } from './src/jest/react-trans
 import { fakeReactHookFormPackageFactory } from './src/jest/react-hook-form'
 import { fakeReacti18NextPackageFactory } from './src/jest/react-i18next'
 import { fakePinoLoggerPackageFactory } from './src/jest/pino'
+import { fakeElectronPackageFactory } from './src/jest/electron'
 import { fakeWinstonLoggerPackageFactory } from './src/jest/winston'
 import { fakeCloudinaryUploaderInstanceFactory } from './src/jest/cloudinary'
 import { fakeWebSocketFactory } from './src/jest/WebSocket'
@@ -585,10 +586,6 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
       $routerFields.basePath = basePath
       $routerFields.isPreview = isPreview
 
-      // const returnValue = {
-      //   ...$routerFields
-      // }
-
       useRouter.mockReturnValueOnce($routerFields)
 
       usePathname.mockImplementationOnce(() => {
@@ -609,6 +606,38 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
     }
   }
 }
+
+/**
+ * A helper utility that enables the use of mock electron package within tests that returns addons
+ *
+ * @return {{ $setSpyOn_BrowserWindow: Function, $setSpyOn_app : Function }}
+ * @api public
+ */
+/* eslint-disable-next-line */
+export const provisionMockedElectronForTests_withAddons = () => {
+  const electronFake = fakeElectronPackageFactory()
+
+  /* @NOTE: This doesn't work for now */
+  provisionFakeJSObject(
+    'electron',
+    () => electronFake
+  )
+
+  return {
+    $setSpyOn_BrowserWindow: () => {
+      return jest.spyOn(
+        require('electron'),
+        'BrowserWindow'
+      )
+    },
+    $setSpyOn_app: () => {
+      return jest.spyOn(
+        require('electron'),
+        'app'
+      )
+    },
+  }
+};
 
 /**
  * A helper utility that enables the use of mock react-hook-form package within tests that returns addons
@@ -1020,7 +1049,7 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
             }
             break
           }
-          case 'expressNext':
+          case 'expressNext': {
             if (typeof extrasFixturesState === 'function' ||
               ('mock' in extrasFixturesState)) {
               throw new TypeError(
@@ -1035,6 +1064,7 @@ export const provisionFixturesForTests_withAddons = (resetAfterEach = 1) => {
               )
             )
             break
+          }
           default:
             return state.allFixtures[fixtureKey] || {}
         }

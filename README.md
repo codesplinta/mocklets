@@ -10,7 +10,7 @@ You can now write your **Jest** tests a lot more faster and better than before.
 
 ## Motivation
 
-Everyone knows how hard software testing setup can be. When it comes to the [testing pyramid](https://www.perfecto.io/blog/testing-pyramid) or [testing polygon](https://x.com/isocroft/status/1834250591456927848), the most amount of work to be done is in creating fixtures (like mocks and fakes) and it can be quite daunting.
+Everyone knows how hard software testing setup can be. When it comes to the [testing pyramid](https://www.perfecto.io/blog/testing-pyramid) or [testing polygon](https://x.com/isocroft/status/1834250591456927848), the most amount of work to be done is in creating fixtures or building mocks and fakes which can be quite daunting.
 
 The very popular testing frameworks for unit testing and e-to-e tests are good at providing certain building blocks for creating mocks/fakes but how often do we have to rebuild/reconstruct the same building blocks to create the same exact (usually from scratch) materials in each test suite in order to make [test doubles](https://en.wikipedia.org/wiki/Test_double#:~:text=In%20test%20automation%2C%20a%20test,the%20rest%20of%20the%20codebase.) (e.g. mocks/stubs(spies)/fakes) available for different JavaScript software projects ?
 
@@ -50,8 +50,15 @@ jest.mock('react', () => ({
   ...jest.requireActual('react')
 }));
 
-// see: https://stackoverflow.com/a/52366601
-const $useRef = <jest.Mock<typeof useRef>>jest.fn(() => ({}))
+const $useRef = (value) => {
+  return {
+    current: value 
+  }
+};
+
+jest.spyOn(require('react'), 'useRef').mockImplementationOnce(
+  $useRef
+);
 ```
 
 In the same vein, we can also provision **react-hook-form** hooks (when using **mocklets**) by doing this too:
@@ -66,6 +73,8 @@ import {
 import Form from '../src/components/UI/regions/Form';
 
 import { toBeArray, toBeEmpty } from 'jest-extended';
+
+
 expect.extend({ toBeArray, toBeEmpty });  
 
 jest.mock('react-hook-form', () => ({
@@ -114,7 +123,7 @@ describe('Tests for my custom React form', () => {
     fireEvent.click(submitButton);
 
     expect(formState.errors).not.toBeEmpty();
-    expect(stubSubmit).not.toHaveBeenCalled();
+    expect(stubSubmit).toHaveBeenCalled();
   })
 })
 ```
@@ -252,6 +261,7 @@ app.listen(8080, function() {
 
 >src/controller/downloads/\__tests\__/getFile.spec.js
 ```js
+import { createRequire } from 'node:module';
 import  {
   provisionFakeDateForTests,
   provisionFixturesForTests_withAddons,
@@ -294,12 +304,14 @@ provisionMockedNodeJSFileSystemForTests((mock, path) => {
 });
 
 /* @HINT:
- *
+ * 'getFile' is a commonjs module being imported
+ * in an ES context. So, we use `createRequire()` 
  * 
  * Since, the 'getFile' module makes use of `res.sendFile()`,
  * It has to be imported after mocking the filesystem (as above)
  */
-import getFile from '../../getFile';
+const require = createRequire(import.meta.url);
+const getFile = require('../../getFile');
 
 describe('Testing `getFile()` ExpressJS app controller action', () => {
  /* @HINT

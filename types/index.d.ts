@@ -5,7 +5,7 @@
 /// <reference types="./next-auth-custom" />
 /// <reference types="./react-hook-form-custom" />
 
-// Type definitions for mocklets v0.0.7
+// Type definitions for mocklets v0.1.1
 // Project: https://github.com/codesplinta/mocklets
 
 import { VirtualConsole } from 'jsdom';

@@ -8,7 +8,13 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
   const fs = require('fs')
   const eos = require('end-of-stream')
 
-  const cloudName = process.env.CLOUDINARY_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'demo';
+  const extractCloudNameFromCloudinaryURL = () => {
+    /* @TODO: ... */
+    return (/^(?:[^\@]+)\@([^?]+)(?=\?|)(?:.*)$/.test(process.env.CLOUDINARY_URL || ""))
+      ? process.env.CLOUDINARY_URL.replace(/^(?:[^\@]+)\@([^?]+)(?=\?|)(?:.*)$/, '$1')
+      : 'demo'
+  };
+  const cloudName = process.env.CLOUDINARY_NAME || process.env.CLOUDINARY_CLOUD_NAME || extractCloudNameFromCloudinaryURL();
 
   const assetPublicIds = {}
   const __baseLocation = `${path.resolve(process.cwd(), '__cloudinary_fake_remote_placeholder_folder')}`

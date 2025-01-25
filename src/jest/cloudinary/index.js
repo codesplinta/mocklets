@@ -1,8 +1,14 @@
 
 export const fakeCloudinaryUploaderInstanceFactory = () => {
+  /* @NOTE: It seems the rollup bundler cannot use `createRequire(...)` to properly bundle commonjs module imports in an ES context */
+  /* @CHECK: https://github.com/rollup/rollup/issues/4274 */
+
+  /* @HINT: So, we have to rely on require(...) used in the calling ES context within Jest */
   const path = require('path')
   const fs = require('fs')
   const eos = require('end-of-stream')
+
+  const cloudName = process.env.CLOUDINARY_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'demo';
 
   const assetPublicIds = {}
   const __baseLocation = `${path.resolve(process.cwd(), '__cloudinary_fake_remote_placeholder_folder')}`
@@ -38,8 +44,9 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
             version: timestampID,
             created_at: createdAt.toISOString(),
             format: options.format || '',
-            url: `http://res.cloudinary.com/${process.env.CLOUDINARY_NAME || 'test'}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((writableStream.path || '\\').replace(/\\/g, '/'))}`,
-            secure_url: `https://res.cloudinary.com/${process.env.CLOUDINARY_NAME || 'test'}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((writableStream.path || '\\').replace(/\\/g, '/'))}`,
+            asset_folder: options.asset_folder || '',
+            url: `http://res.cloudinary.com/${cloudName}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((writableStream.path || '\\').replace(/\\/g, '/'))}`,
+            secure_url: `https://res.cloudinary.com/${cloudName}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((writableStream.path || '\\').replace(/\\/g, '/'))}`,
             public_id: options.public_id,
             tags: [],
             /* eslint-disable-next-line */
@@ -51,7 +58,7 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
           }
 
           /* eslint-disable-next-line */
-          assetPublicIds[options.public_id] = JSON.parse(JSON.stringify(
+          assetPublicIds[options.public_id || '_'] = JSON.parse(JSON.stringify(
             args
           ))
 
@@ -103,9 +110,9 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
             tags: [],
             type: options.type || 'upload',
             placeholder: false,
-            url: `http://res.cloudinary.com/${process.env.CLOUDINARY_NAME || 'test'}/image/upload/v${timestampID}/${toPublicId}.jpg`,
-            secure_url: `https://res.cloudinary.com/${process.env.CLOUDINARY_NAME || 'test'}/image/upload/v${timestampID}/${toPublicId}.jpg`,
-            asset_folder: '',
+            url: `http://res.cloudinary.com/${cloudName}/image/upload/v${timestampID}/${toPublicId || 'sample'}.jpg`,
+            secure_url: `https://res.cloudinary.com/${cloudName}/image/upload/v${timestampID}/${toPublicId || 'sample'}.jpg`,
+            asset_folder: options.folder || '',
             /* eslint-disable-next-line */
             display_name: toPublicId
           })
@@ -157,7 +164,33 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
           dir.closeSync()
           fs.writeFile(path.join(dir.path, path.basename(filename)), fs.readFileSync(filePath), (err) => {
             if (err) reject(err)
-            resolve()
+
+            const createdAt = new Date()
+            const timestampID = (createdAt.getTime()) / 1000
+  
+            const args = {
+              version: timestampID,
+              created_at: createdAt.toISOString(),
+              format: options.format || '',
+              asset_folder: options.asset_folder || '',
+              url: `http://res.cloudinary.com/${cloudName}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((filePath || '\\').replace(/\\/g, '/'))}`,
+              secure_url: `https://res.cloudinary.com/${cloudName}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((filePath || '\\').replace(/\\/g, '/'))}`,
+              public_id: options.public_id,
+              tags: [],
+              /* eslint-disable-next-line */
+              resource_type: options.resource_type || 'raw',
+              /* eslint-disable-next-line */
+              display_name: options.public_id,
+              type: 'upload',
+              placeholder: false
+            }
+  
+            /* eslint-disable-next-line */
+            assetPublicIds[options.public_id || '_'] = JSON.parse(JSON.stringify(
+              args
+            ));
+
+            resolve(args);
           })
         })
       })
@@ -175,11 +208,15 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
     })
   }
 
-  Cloudinary.uploader.__mocks = Cloudinary.v2.uploader = {
-    uploadedFileExists: (publicId) => {
-      return fs.existsSync(publicId)
+  Cloudinary.uploader.__mocks = Object.assign(
+    {},
+    Cloudinary.v2.uploader,
+    {
+      uploadedFileExists: (publicId) => {
+        return fs.existsSync(publicId)
+      }
     }
-  }
+  );
 
   Cloudinary.uploader.__refresh = () => {
     if (fs.existsSync(__baseLocation)) {

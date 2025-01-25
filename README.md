@@ -33,7 +33,7 @@ Or install using `yarn`
 
 ## Support
 
->**mocklets** can ONLY run well on [**Node.js**](https://nodejs.org/) v10.0.0 - v19.3.x as well as [**Jest**](https://jestjs.io/) v25.5.1 - v29.5.x
+>**mocklets** can ONLY run well on [**Node.js**](https://nodejs.org/) v12.2.0 - v19.3.x as well as [**Jest**](https://jestjs.io/) v25.5.1 - v29.5.x
 
 ## Getting Started
 
@@ -261,7 +261,7 @@ app.listen(8080, function() {
 
 >src/controller/downloads/\__tests\__/getFile.spec.js
 ```js
-import { createRequire } from 'node:module';
+import { createRequire } from 'module';
 import  {
   provisionFakeDateForTests,
   provisionFixturesForTests_withAddons,

@@ -2,6 +2,7 @@
 export const fakeCloudinaryUploaderInstanceFactory = () => {
   /* @NOTE: It seems the rollup bundler cannot use `createRequire(...)` to properly bundle commonjs module imports in an ES context */
   /* @CHECK: https://github.com/rollup/rollup/issues/4274 */
+  /* @CHECK: What is `createRequire(...)` ? | https://nodejs.org/dist/v17.9.1/docs/api/module.html#modulecreaterequirefilename */
 
   /* @HINT: So, we have to rely on require(...) used in the calling ES context within Jest */
   const path = require('path')

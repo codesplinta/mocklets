@@ -1,3 +1,18 @@
+<a name="0.1.1"></a>
+# 0.1.1 (2025-03-26)
+
+### Feature Added
+
+### Enhancements
+- [Added `example.env` file to document environmental variables](https://github.com/codesplinta/mocklets/pull/2) used in **mocklets**
+
+### WIP (Work-in-progress)
+- Adding `middleware` fake **Redux**
+- Adding **NextJS** middleware request/response mock objects
+- Adding fakes and mocks for `app` and `BrowserWindow` objects in **electron**
+
+### Bug Fixes
+
 <a name="0.1.0"></a>
 # 0.1.0 (2024-09-30)
 

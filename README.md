@@ -12,7 +12,7 @@ You can now write your **Jest** tests a lot more faster and better than before.
 
 So, **mocklets** as stated earlier is simply something that helps removes unnecessary heavy boilerplate and assertion friction when writing tests in **Jest**. But why and how does it help to remove all these ?
 
-When writing tests, we have to assert on the side effects (or outputs) from our #Jest test cases that has just run. Sometimes, it is easy to assert these side effects (or outputs) if they are in a place that is easy to access (e.g. `window.localStoraget.getItem(...)` if the output from our test case was set into local storage like using `window.localStorage.setItem(...)`)
+When writing tests, we have to assert on the side effects (or outputs) from our **Jest** test cases that has just run. Sometimes, it is easy to assert these side effects (or outputs) if they are in a place that is easy to access (e.g. `window.localStoraget.getItem(...)` if the output from our test case was set into local storage like using `window.localStorage.setItem(...)`)
 
 Other times, it is not so easy. We have to setup **Jest** _**stubs**_ (i.e. testing tools that record when they are called, what they are called with and how many times they are called). Yet, when we want to verify these things from when third-party libraries/APIs are called, it's not easy because these third-party libraries/APIs are not wrapped with Jest #stubs that record these calls so we can easily assert the side effect from running our code in these test cases.
 

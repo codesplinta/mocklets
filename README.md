@@ -2,11 +2,29 @@
 
 # mocklets
 
-This package helps you write tests using **Jest** (and **Vitest** - coming soon!) with much less boilerplate than you are currently used to. Much of this boilerplate is in the mocks you have to setup and use in your tests.
+This package helps you write tests using **Jest** (and **Vitest** - coming soon!) with much less boilerplate than you are currently used to. Much of this boilerplate is in the mocks you have to setup and use in your tests. It also helps to reduce friction with test assertions for side effects (or outputs) that are harder to assert on. By creating fakes and/or mocks that are reusable and also pass as **Jest** stubs making it easy to assert on them.
 
-Reusable standard mocks (and [fakes](https://blog.pragmatists.com/test-doubles-fakes-mocks-and-stubs-1a7491dfa3da)) for popular browser APIs, Node.js APIs and framework/library objects for [**Jest**](https://jestjs.io/). This library creates a seamless bridge between **Jest**, **JSDOM** and **Popular Thrid-party JS libraries** (e.g. `fetch()`, `localStorage`, `console.log()`, `window.open()`, `window.confirm()`, `new ResizeObserver()`, [MUI](https://mui.com/material-ui/getting-started/), [Nextjs](https://nextjs.org/docs), [react-hook-form](https://react-hook-form.com), [ExpressJS](https://expressjs.com/en/5x/api.html#express) e.t.c) used for building apps such that you don't have to think about how and what you need/require to setup your testing space to write tests.
+Therefore, **mocklets** is a set of reusable standard mocks (and [fakes](https://blog.pragmatists.com/test-doubles-fakes-mocks-and-stubs-1a7491dfa3da)) for popular browser APIs, Node.js APIs and framework/library objects for [**Jest**](https://jestjs.io/). This library creates a seamless bridge between **Jest**, **JSDOM** and **Popular Thrid-party JS libraries** (e.g. `fetch()`, `localStorage`, `console.log()`, `window.location.href`, `window.open()`, `window.confirm()`, `new ResizeObserver()`, [MUI](https://mui.com/material-ui/getting-started/), [Nextjs](https://nextjs.org/docs), [react-hook-form](https://react-hook-form.com), [ExpressJS](https://expressjs.com/en/5x/api.html#express) e.t.c) used for building apps such that you don't have to think about how and what you need/require to setup your testing space to write tests.
 
 You can now write your **Jest** tests a lot more faster and better than before.
+
+## Preamble
+
+So, **mocklets** as stated earlier is simply something that helps removes unnecessary heavy boilerplate and assertion friction when writing tests in **Jest**. But why and how does it help to remove all these ?
+
+When writing tests, we have to assert on the side effects (or outputs) from our #Jest test cases that has just run. Sometimes, it is easy to assert these side effects (or outputs) if they are in a place that is easy to access (e.g. `window.localStoraget.getItem(...)` if the output from our test case was set into local storage like using `window.localStorage.setItem(...)`)
+
+Other times, it is not so easy. We have to setup **Jest** _**stubs**_ (i.e. testing tools that record when they are called, what they are called with and how many times they are called). Yet, when we want to verify these things from when third-party libraries/APIs are called, it's not easy because these third-party libraries/APIs are not wrapped with Jest #stubs that record these calls so we can easily assert the side effect from running our code in these test cases.
+
+Plus, we don't always want to run the real thing (i.e. the real implementation of these third-party libraries/APIs) in our tests every time. We want to run a fake version or a mock version that behaves like the real implementation simply because it's cheaper to run. Also, since #Jest uses JSDOM which isn't a real browser environment, the real implementation might get stuck somehow.
+
+So, **mocklets** is a bridge between faking out these third-party libries/APIs and making them test-friendly in a Jest/JSDOM environment.
+
+For instance, `window.location.href` when set to a new url value in a real browser causes navigation so JSDOM doesn't really allow for it to be set to a new url value. But **mocklets** turns this around using some JS tricks make it possible to set `window.location.href` to a new url value making it easy to assert if `window.location.href` was changed during the running of your test case.
+
+Again, **mocklets** also does the same for the `useForm()` hook from **react-hook-form** third-party library. Within your test environment, `useForm()` becomes a fake implementation that returns a **Jest** _**stub**_ object that can asserted on.
+
+Finally, **mocklets** does the same for the JS object returned by the **NextJS** hook: `useRouter()` when called. Now, you can easily assert that `back()` or `push()` was called since `back()` or `push()` are **Jest** _**stubs**_ based on a fake implementation of `useRouter()`.
 
 ## Motivation
 

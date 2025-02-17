@@ -3,6 +3,9 @@
 
 ### Feature Added
 
+### Bug Fixes
+- Fixed bug in fake `useRouter()` implementation.
+
 ### Enhancements
 - [Added `example.env` file to document environmental variables](https://github.com/codesplinta/mocklets/pull/2) used in **mocklets**
 

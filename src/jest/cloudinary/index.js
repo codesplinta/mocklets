@@ -10,17 +10,34 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
   const eos = require('end-of-stream')
 
   const extractCloudNameFromCloudinaryURL = () => {
-    /* @TODO: ... */
-    return (/^(?:[^\@]+)\@([^?]+)(?=\?|)(?:.*)$/.test(process.env.CLOUDINARY_URL || ""))
-      ? process.env.CLOUDINARY_URL.replace(/^(?:[^\@]+)\@([^?]+)(?=\?|)(?:.*)$/, '$1')
+    return (/^(?:[^@]+)@([^?]+)(?=\?|)(?:.*)$/.test(process.env.CLOUDINARY_URL || ''))
+      ? process.env.CLOUDINARY_URL.replace(/^(?:[^@]+)@([^?]+)(?=\?|)(?:.*)$/, '$1')
       : 'demo'
-  };
-  const cloudName = process.env.CLOUDINARY_NAME || process.env.CLOUDINARY_CLOUD_NAME || (extractCloudNameFromCloudinaryURL());
+  }
+  const cloudName = process.env.CLOUDINARY_NAME || process.env.CLOUDINARY_CLOUD_NAME || (extractCloudNameFromCloudinaryURL())
 
   const assetPublicIds = {}
   const __baseLocation = `${path.resolve(process.cwd(), '__cloudinary_fake_remote_placeholder_folder')}`
 
-  const Cloudinary = { v2: {} }
+  const Cloudinary = { v2: {}, api: {} }
+
+  /* @TODO: Enact full fake implementation later */
+  Cloudinary.image = (resourceName, options = {}) => {
+    if (typeof options.transformations !== 'object') {
+      return `https://res.cloudinary.com/demo/image/upload/${resourceName}`
+    }
+    return `https://res.cloudinary.com/demo/image/upload/.../${resourceName}`
+  }
+
+  /* @TODO: Enact full fake implementation later */
+  Cloudinary.api.resource = (publicId, options = {}) => {
+    const result = { public_id: publicId }
+    if (typeof options.colors === 'boolean') {
+      result.colors = []
+    }
+
+    return Promise.resolve(result)
+  }
 
   Cloudinary.uploader = {
     /* eslint-disable-next-line */
@@ -92,6 +109,53 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
       if (typeof callback === 'function') {
         callback(publicId)
       }
+    }),
+    upload: jest.fn(function (filePath, options = {}) {
+      const location = `${__baseLocation.replace(
+        /* eslint-disable-next-line */
+        '__cloudinary_fake_remote_placeholder_folder', options.asset_folder || options.folder || '__cloudinary_fake_remote_placeholder_folder'
+      )}`
+      if (!fs.existsSync(__baseLocation) || !path.existsSync(location)) {
+        fs.mkdirSync(__baseLocation)
+      }
+
+      const [filename] = filePath.split('/').reverse()
+      return new Promise((resolve, reject) => {
+        fs.opendir(location, 'w', function (error, dir) {
+          if (error) reject(error)
+          dir.closeSync()
+          fs.writeFile(path.join(dir.path, path.basename(filename)), fs.readFileSync(filePath), (err) => {
+            if (err) reject(err)
+
+            const createdAt = new Date()
+            const timestampID = (createdAt.getTime()) / 1000
+
+            const args = {
+              version: timestampID,
+              created_at: createdAt.toISOString(),
+              format: options.format || '',
+              asset_folder: options.asset_folder || '',
+              url: `http://res.cloudinary.com/${cloudName}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((filePath || '\\').replace(/\\/g, '/'))}`,
+              secure_url: `https://res.cloudinary.com/${cloudName}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((filePath || '\\').replace(/\\/g, '/'))}`,
+              public_id: options.public_id,
+              tags: [],
+              /* eslint-disable-next-line */
+              resource_type: options.resource_type || 'raw',
+              /* eslint-disable-next-line */
+              display_name: options.public_id,
+              type: 'upload',
+              placeholder: false
+            }
+
+            /* eslint-disable-next-line */
+            assetPublicIds[options.public_id || '_'] = JSON.parse(JSON.stringify(
+              args
+            ))
+
+            resolve(args)
+          })
+        })
+      })
     })
   }
 
@@ -155,53 +219,7 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
     download_backedup_asset: jest.fn(function (assetId, versionId) {
       return `${assetId}/${versionId}`
     }),
-    upload: jest.fn(function (filePath, options = {}) {
-      const location = `${__baseLocation.replace(
-        /* eslint-disable-next-line */
-        '__cloudinary_fake_remote_placeholder_folder', options.asset_folder || options.folder || '__cloudinary_fake_remote_placeholder_folder'
-      )}`
-      if (!fs.existsSync(__baseLocation) || !path.existsSync(location)) {
-        fs.mkdirSync(__baseLocation)
-      }
-
-      const [filename] = filePath.split('/').reverse()
-      return new Promise((resolve, reject) => {
-        fs.opendir(location, 'w', function (error, dir) {
-          if (error) reject(error)
-          dir.closeSync()
-          fs.writeFile(path.join(dir.path, path.basename(filename)), fs.readFileSync(filePath), (err) => {
-            if (err) reject(err)
-
-            const createdAt = new Date()
-            const timestampID = (createdAt.getTime()) / 1000
-  
-            const args = {
-              version: timestampID,
-              created_at: createdAt.toISOString(),
-              format: options.format || '',
-              asset_folder: options.asset_folder || '',
-              url: `http://res.cloudinary.com/${cloudName}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((filePath || '\\').replace(/\\/g, '/'))}`,
-              secure_url: `https://res.cloudinary.com/${cloudName}/${options.resource_type || 'raw'}/upload/v${timestampID}/${path.basename((filePath || '\\').replace(/\\/g, '/'))}`,
-              public_id: options.public_id,
-              tags: [],
-              /* eslint-disable-next-line */
-              resource_type: options.resource_type || 'raw',
-              /* eslint-disable-next-line */
-              display_name: options.public_id,
-              type: 'upload',
-              placeholder: false
-            }
-  
-            /* eslint-disable-next-line */
-            assetPublicIds[options.public_id || '_'] = JSON.parse(JSON.stringify(
-              args
-            ));
-
-            resolve(args);
-          })
-        })
-      })
-    }),
+    upload: Cloudinary.uploader.upload,
     destroy: jest.fn(function (publicId, options = {}) {
       return new Promise((resolve) => {
         if (fs.existsSync(publicId)) {
@@ -223,7 +241,7 @@ export const fakeCloudinaryUploaderInstanceFactory = () => {
         return fs.existsSync(publicId)
       }
     }
-  );
+  )
 
   Cloudinary.uploader.__refresh = () => {
     if (fs.existsSync(__baseLocation)) {

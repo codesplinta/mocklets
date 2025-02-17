@@ -26,7 +26,8 @@ window._virtualConsole.removeAllListeners('jsdomError');
 window._virtualConsole.addListener('jsdomError', error => {
   if (
     error.type !== 'not implemented' &&
-    error.message !== 'Not implemented: navigation (except hash changes)' &&
+    (error.message !== 'Not implemented: window.print'
+    || error.message !== 'Not implemented: navigation (except hash changes)') &&
     originalListener
   ) {
     originalListener(error);

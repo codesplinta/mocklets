@@ -460,13 +460,13 @@ export const provisionFakeBrowserResizeObserverForTests = () => {
  */
 export const provisionFakeBrowserPerformanceNavigationForTests = () => {
   /*
-   * @HINT: 
-   * 
+   * @HINT:
+   *
    * JSDOM implements `window.performance` but not `window.performance.mark()` or `window.performance.navigation`
    */
   /* @CHECK: https://github.com/jsdom/jsdom/issues/2136 */
   return {
-    
+
   }
 }
 
@@ -720,7 +720,7 @@ export const provisionMockedMaterialUIKitForTests = () => {
         configurable: true,
         writable: true,
         value: newInnerWidth
-      });
+      })
     },
     $setSpyOn_useMediaQuery_withMockImplementation: () => {
       const useMediaQuery = jest.spyOn(

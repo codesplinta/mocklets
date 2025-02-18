@@ -1,13 +1,18 @@
-<a name="0.1.1"></a>
-# 0.1.1 (2025-03-26)
+<a name="0.2.0"></a>
+# 0.2.0 (2025-03-26)
 
 ### Feature Added
+- Added proper JEST-based fake for `window.print()` while overriding JSDOM implementation.
+- Added fake for `window.MediaQueryListEvent` as JSDOM has no implementation.
 
 ### Bug Fixes
-- Fixed bug in fake `useRouter()` implementation.
+- Fixed bug in fake **NextJS** `useRouter()` implementation.
 
 ### Enhancements
 - [Added `example.env` file to document environmental variables](https://github.com/codesplinta/mocklets/pull/2) used in **mocklets**
+
+### Breaking Changes
+- Removed `provisionFakeBrowserMatchMediaForTests` public function.
 
 ### WIP (Work-in-progress)
 - Adding `middleware` fake **Redux**

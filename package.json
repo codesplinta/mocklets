@@ -1,6 +1,6 @@
 {
   "name": "mocklets",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Reusable standard mocks and fakes for popular browser and Node.js APIs, framework/library objects for Jest",
   "homepage": "https://github.com/codesplinta/mocklets",
   "main": "dist/mocklets.cjs.js",
@@ -120,6 +120,7 @@
     "@rollup/plugin-strip": "^3.0.4",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/mock-fs": "4.13.4",
+    "css-mediaquery": "^0.1.2",
     "express": "^4.21.0",
     "fetch-mock": "10.1.1",
     "ghooks": "^2.0.4",

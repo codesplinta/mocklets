@@ -1,6 +1,4 @@
 
-import { mediaQueryMatcher } from './../../matchMedia'
-
 export const createTheme = () => ({
   breakpoints: {
     up: (breakpoint) => {
@@ -30,7 +28,7 @@ export const fakeMaterialUIKitPackageFactory = () => {
         mediaQueryTag = mediaQueryTagOrFunction
       }
 
-      return mediaQueryMatcher(mediaQueryTag).matches
+      return window.matchMedia(mediaQueryTag).matches
     }
   })
 }

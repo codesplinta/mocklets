@@ -443,13 +443,6 @@ declare module 'mocklets' {
  */
   export function provisionFakeBrowserResizeObserverForTests(): void;
 /**
- * A helper utility that enables the use of fake browser API: `window.matchMedia` within tests
- *
- * @returns void
- * @api public
- */
-  export function provisionFakeBrowserMatchMediaForTests(): void;
-/**
  * A helper utility that enables the use of fake browser API: `window.alert()`, `window.confirm()`,
  * `window.open()` & `window.prompt()` within tests
  * 
@@ -490,12 +483,13 @@ declare module 'mocklets' {
   export function provisionMockedNextJSRouterForTests(): void;
 /**
  * A helper utility that enables the use of mock Material UI kit: `@mui/material` within tests
- * 
- * @return {{ $setSpyOn_useMediaQuery_withMockImplementation: Function }}
+ *
+ * @return {{ $setSpyOn_useMediaQuery_withMockImplementation: Function, $setWindowInnerWidth_forThisTestCase: Function }}
  * @api public
  */
   export function provisionMockedMaterialUIKitForTests(): {
     $setSpyOn_useMediaQuery_withMockImplementation (): void;
+    $setWindowInnerWidth_forThisTestCase (newInnerWidth: string): void;
   };
 /**
  * A helper utility that enables the use of mock NextJS router package within tests that returns addons

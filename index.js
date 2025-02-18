@@ -9,7 +9,6 @@ import { fakeWebSocketFactory } from './src/jest/WebSocket'
 import { fakeMaterialUIKitPackageFactory } from './src/jest/@mui/material'
 import { fakeNextJSRouterPackageFactory } from './src/jest/next/router'
 import { fakeAdonisJSCachePackageFactory } from './src/jest/adonisjs-cache'
-import { fakematchMediaFactory } from './src/jest/matchMedia'
 import { fakeIntersectionObserverFactory } from './src/jest/IntersectionObserver'
 import { fakeResizeObserverFactory } from './src/jest/ResizeObserver'
 import { fakeStorageInstanceFactory } from './src/jest/browserStorage'
@@ -454,16 +453,21 @@ export const provisionFakeBrowserResizeObserverForTests = () => {
 }
 
 /**
- * A helper utility that enables the use of fake browser API: `window.matchMedia` within tests
+ * A helper utility that enables the use of fake browser API: `window.performance.navigation` within tests
  *
  * @return void
  * @api public
  */
-export const provisionFakeBrowserMatchMediaForTests = () => {
-  provisionFakeWebPageWindowObject(
-    'matchMedia',
-    fakematchMediaFactory()
-  )
+export const provisionFakeBrowserPerformanceNavigationForTests = () => {
+  /*
+   * @HINT: 
+   * 
+   * JSDOM implements `window.performance` but not `window.performance.mark()` or `window.performance.navigation`
+   */
+  /* @CHECK: https://github.com/jsdom/jsdom/issues/2136 */
+  return {
+    
+  }
 }
 
 /**
@@ -684,10 +688,6 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
         }
       })
 
-      // const returnValue = {
-      //   ...$formContextFields
-      // }
-
       useForm.mockImplementationOnce(() => $formContextFields)
 
       return $formContextFields // returnValue
@@ -698,7 +698,7 @@ export const provisionMockedReactHookFormForTests_withAddons = () => {
 /**
  * A helper utility that enables the use of mock Material UI kit: `@mui/material` within tests
  *
- * @return {{ $setSpyOn_useMediaQuery_withMockImplementation: Function }}
+ * @return {{ $setSpyOn_useMediaQuery_withMockImplementation: Function, $setWindowInnerWidth_forThisTestCase: Function }}
  * @api public
  */
 export const provisionMockedMaterialUIKitForTests = () => {
@@ -711,6 +711,17 @@ export const provisionMockedMaterialUIKitForTests = () => {
   )
 
   return {
+    $setWindowInnerWidth_forThisTestCase (newInnerWidth) {
+      if (typeof newOrigin !== 'number') {
+        return
+      }
+
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: newInnerWidth
+      });
+    },
     $setSpyOn_useMediaQuery_withMockImplementation: () => {
       const useMediaQuery = jest.spyOn(
         require('@mui/material'),

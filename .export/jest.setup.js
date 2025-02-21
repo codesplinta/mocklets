@@ -67,91 +67,98 @@ window.matchMedia = (function () {
   const emitter = mitt(eventsMap)
 
   const mediaQueryMatcher = query => {
-      if (typeof query === 'undefined') {
-        throw new TypeError(
-          "Failed to execute 'matchMedia' on 'Window': 1 argument required, but only 0 present."
-        )
+    if (typeof query === 'undefined') {
+      throw new TypeError(
+        "Failed to execute 'matchMedia' on 'Window': 1 argument required, but only 0 present."
+      )
+    }
+
+    let _onchangeHandler = null
+
+    const calculateMatches = (_query) => {
+      if (typeof _query !== "string") {
+        return false;
       }
+      /* eslint-disable-next-line */
+      const screenQueryPattern = /^(?:screen(?:[ ]+)and(?:[ ]+))?\((?:[ ]*)(min|max)\-(width)(?:[ ]*)\:(?:[ ]*)([\d]+?)(px|r?em)(?:[ ]*)\)$/
+      const viewPortWidth = window.innerWidth || window.document.documentElement.clientWidth
+      const [, range, dimension, size, unit] = screenQueryPattern.exec(_query.toLowerCase().trim()) || [_query, '', '', '', '']
 
-      let _onchangeHandler = null
-
-      const calculateMatches = (_query) => {
-        if (typeof _query !== "string") {
-          return false;
-        }
-        /* eslint-disable-next-line */
-        const queryPattern = /^(?:screen and )?\((min|max)\-(width)(?:[ ]*)\:(?:[ ]*)([\d]+?)(px|r?em)\)$/
-        const viewPortWidth = window.innerWidth || window.document.documentElement.clientWidth
-        const [, range, dimension, size, unit] = queryPattern.exec(_query.trim()) || [_query, '', '', '', '']
-
-        if (dimension === 'width' && unit === 'px') {
+      if (dimension === 'width' && unit === 'px') {
         return range === 'min'
           ? viewPortWidth >= parseInt(size)
           : viewPortWidth <= parseInt(size)
-        }
-
-        return mediaQuery.match(_query, {
-            type: "screen",
-            width: window.innerWidth
-        })
-      };
-
-      const _dispatchEvent = (event) => {
-        const _modifiedEvent = 'matches' in event && event.media === 'print' ? event : Object.assign(
-        {},
-        event,
-        { matches: calculateMatches(query) }
-        )
-
-        if (typeof _onchangeHandler === 'function') {
-          _onchangeHandler(_modifiedEvent)
-          return;
-        }
-        emitter.emit('change', _modifiedEvent)
       }
 
-      window.addEventListener('resize', () => {
-        _dispatchEvent({
-          media: query,
-          type: 'change'
-        })
-      })
+      const displayModeQueryPattern = /^\((?:[ ]*)(display-mode)(?:[ ]*)\:(?:[ ]*)(fullscreen|standalone)(?:[ ]*)\)$/
+      const [, mode, context] = displayModeQueryPattern.exec(_query.toLowerCase().trim()) || [_query, '', '']
 
-      return {
-          get matches () {
-            return query === 'print'
-              ? window.__isPrint
-              : calculateMatches(query)
-          },
-          get media () {
-            if (typeof query === 'object'
-              || typeof query === 'number') {
-              return 'not all'
-            }
-            return query === null ? 'null' : query;
-          },
-          set onchange (handler) {
-            _onchangeHandler = handler
-          },
-          get onchange  () {
-            return _onchangeHandler
-          },
-          addListener (callback) {
-            /* @NOTE: deprecated */
-            emitter.on('change', callback)
-          },
-          removeListener (callback) {
-            /* @NOTE: deprecated */
-            emitter.off('change', callback)
-          },
-          addEventListener (event, callback) {
-            emitter.on(event, callback)
-          },
-          removeEventListener (event, callback) {
-            emitter.off(event, callback)
-          },
-          dispatchEvent: _dispatchEvent
-      };
+      if (mode === 'display-mode' && context !== '') {
+        return false;
+      }
+
+      return mediaQuery.match(_query, {
+        type: "screen",
+        width: window.innerWidth
+      })
+    };
+
+    const _dispatchEvent = (event) => {
+      const _modifiedEvent = 'matches' in event && event.media === 'print' ? event : Object.assign(
+      {},
+      event,
+      { matches: calculateMatches(query) }
+      )
+
+      if (typeof _onchangeHandler === 'function') {
+        _onchangeHandler(_modifiedEvent)
+        return;
+      }
+      emitter.emit('change', _modifiedEvent)
+    }
+
+    window.addEventListener('resize', () => {
+      _dispatchEvent({
+        media: query,
+        type: 'change'
+      })
+    })
+
+    return {
+      get matches () {
+        return query === 'print'
+          ? window.__isPrint
+          : calculateMatches(query)
+      },
+      get media () {
+        if (typeof query === 'object'
+          || typeof query === 'number') {
+          return 'not all'
+        }
+        return query === null ? 'null' : query;
+      },
+      set onchange (handler) {
+        _onchangeHandler = handler
+      },
+      get onchange  () {
+        return _onchangeHandler
+      },
+      addListener (callback) {
+        /* @NOTE: deprecated */
+        emitter.on('change', callback)
+      },
+      removeListener (callback) {
+        /* @NOTE: deprecated */
+        emitter.off('change', callback)
+      },
+      addEventListener (event, callback) {
+        emitter.on(event, callback)
+      },
+      removeEventListener (event, callback) {
+        emitter.off(event, callback)
+      },
+      dispatchEvent: _dispatchEvent
+    };
   };
 
   return jest.fn(mediaQueryMatcher);

@@ -36,7 +36,7 @@ This is where **mocklets** come in.
 
 This project provides re-usable and standard mocks/stubs/fakes for _Jest_ only (Vitest coming soon).
 
-Finally, sometimes **Jest** and **JSDOM** don't play nice andd **JSDOM** has browser APIs that are not yet implemented or badly implemented (see list [here](https://github.com/tmobile/jest-jsdom-browser-compatibility/blob/master/README.md)). **mocklets** tries to hide these issues so you don't have to deal with them.
+Finally, sometimes, **Jest** and **JSDOM** don't play nice and **JSDOM** has browser APIs that are not yet implemented or badly implemented (see list [here](https://github.com/tmobile/jest-jsdom-browser-compatibility/blob/master/README.md)). **mocklets** tries to shield you from these issues so you don't have to deal with them.
 
 ## Installation
 >Install using `npm`

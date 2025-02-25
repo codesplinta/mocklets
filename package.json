@@ -95,10 +95,10 @@
       "<rootDir>/node_modules/"
     ],
     "moduleNameMapper": {
-		  "@mocklets/jest": "<rootDir>/packages/src/jest/index.js",
+      "@mocklets/jest": "<rootDir>/packages/src/jest/index.js",
       "@mocklets/vitest": "<rootDir>/packages/src/vitest/index.js",
-		  "(.+)\\.js": "$1",
-	  },
+      "(.+)\\.js": "$1"
+    },
     "coverageThreshold": {
       "global": {
         "branches": 19,

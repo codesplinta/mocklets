@@ -173,7 +173,15 @@ export const nextJSuseRouter = (eventsMap = {}) => {
   })
   const mockRouterReload = jest.fn(() => {
     if (typeof window !== 'undefined') {
-      window.setTimeout(() => window.location.reload(), 0)
+        window.setTimeout(() => {
+          try {
+            window.location.reload()
+          } catch {
+            window.dispatchEvent(
+              new Event('beforeunload', { cancelable: true })
+            );
+          }
+        }, 0)
     }
     return Promise.resolve(true)
   })

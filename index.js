@@ -97,6 +97,7 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
           descriptors.assign.value.call(originalProperty, url)
         }),
         reload: jest.fn((forcedReload = false) => {
+          window.dispatchEvent(new Event('beforeunload', { cancelable: true }));
           if (forcedReload) {
             descriptors.reload.value.call(originalProperty, forcedReload)
           } else {

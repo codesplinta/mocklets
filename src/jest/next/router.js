@@ -263,7 +263,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     const $query = { ...previousQuery }
     const queryStringFromUrl = typeof url.search === 'string' && url.search.length > 0
-      ? reduceUrlToQueryString('/' + url.search)
+      ? reduceUrlToQueryString(url.search)
       : {}
     const hasQueryObject = typeof url.query === 'object' && url !== null && url.query !== null
     const allQuery = Object.assign({}, queryStringFromUrl, hasQueryObject ? url.query : {})
@@ -285,7 +285,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
       )
     }
 
-    /* @HINT: argument `$query` is updated via reference here; Be careful! */
+    /* @SMELL: argument `$query` is updated via/by reference here; Be careful! */
     const { queryString } = stringifyFromQueryObjects(allQuery, $query)
 
     asPathSuffix += queryString
@@ -293,6 +293,12 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     if (asPathSuffix !== '?') {
       _asPath += asPathSuffix
     }
+
+    try {
+      window.location.pathname = url.pathname;
+      window.location.search = queryString;
+      window.location.hash = url.hash
+    } catch {}
 
     return { query: $query, hash: url.hash, pathname: url.pathname, asPath: _asPath }
   }
@@ -339,7 +345,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
        */
       const $url = new URL(
         url,
-        'https://xle.com'
+        window.location.origin || 'https://test.com'
       )
 
       normalizedRoute = normalizeAsRouteFromUrl(
@@ -380,7 +386,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
           ? Object.assign(
               {},
               { query: normalizedRoute.query },
-              (new URL(url, 'https://xle.com'))
+              (new URL(url, window.location.origin || 'https://test.com'))
             )
           : url,
         asPath: $asPath,
@@ -480,7 +486,11 @@ export const nextJSuseRouter = (eventsMap = {}) => {
       return _query
     },
     set query (query = {}) {
-      _query = JSON.parse(JSON.stringify(query))
+      _query = JSON.parse(JSON.stringify(query));
+      const { queryString } = stringifyFromQueryObjects(_query);
+      try {
+        window.location.search = queryString;
+      } catch {}
     },
     basePath: '',
     get pathname () {
@@ -508,6 +518,10 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     set asPath (pathname) {
       const $query = this.query
       const $locale = this.locale
+
+      try {
+        window.location.pathname = pathname
+      } catch {}
 
       routingHistoryList = new Stack([])
       routingHistoryListShiftBuffer = new BasicStack([])

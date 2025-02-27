@@ -65,6 +65,8 @@ describe('Tests for NextJS `useRouter`', () => {
     router.beforePopState(routerCallback);
     window.addEventListener('popstate', browserCallback, false);
 
+    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */
+    router.push("/contact/new");
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerback */
     router.back();
 

@@ -433,6 +433,14 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     _beforePopStateCallback(routePathHistoryEntry)
 
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    window.history.forward();
+
+    window.location.pathname = routePathHistoryEntry.url.pathname
+    window.location.search = routePathHistoryEntry.url.search
+    window.location.hash = routePathHistoryEntry.url.hash
+
     routingHistoryList.push(routePathHistoryEntry)
   })
   const mockRouterBack = jest.fn(() => {
@@ -444,6 +452,16 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     _beforePopStateCallback(routePathHistoryEntry)
 
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    window.history.back();
+
+    const topRoutePathHistoryEntry = routingHistoryList.peek()
+
+    window.location.pathname = topRoutePathHistoryEntry.url.pathname
+    window.location.search = topRoutePathHistoryEntry.url.search
+    window.location.hash = topRoutePathHistoryEntry.url.hash
+
     routingHistoryListShiftBuffer.push(routePathHistoryEntry)
   })
   const mockBeforePopState = jest.fn((callback) => {
@@ -452,6 +470,8 @@ export const nextJSuseRouter = (eventsMap = {}) => {
         const currentPathname = window.location.pathname
         const currentSearch = window.location.search
         const currentHash = window.location.hash
+
+        const TYPE_BACK_FORWARD = 2;
 
         let historyStack = routingHistoryList.clone()
 
@@ -468,13 +488,15 @@ export const nextJSuseRouter = (eventsMap = {}) => {
           return
         }
 
-        if (currentPathname === topRoutingPathHistoryEntry.url.pathname ||
-            currentSearch === topRoutingPathHistoryEntry.url.search ||
-              currentHash === topRoutingPathHistoryEntry.url.hash) {
-          mockRouterBack()
-        } else {
-          mockRouterForward()
-        }
+        try {
+          if (currentPathname === topRoutingPathHistoryEntry.url.pathname ||
+              currentSearch === topRoutingPathHistoryEntry.url.search ||
+                currentHash === topRoutingPathHistoryEntry.url.hash) {
+            window.performace.navigation.type = TYPE_BACK_FORWARD;
+          } else {
+            window.performace.navigation.type = TYPE_BACK_FORWARD;
+          }
+        } catch {}
       }))
     }
     _beforePopStateCallback = callback

@@ -33,25 +33,132 @@
  *
  * @returns void
  */
- export const provisionFakeWebPageWindowObject = (property, fakeOrMock) => {
-    const { [property]: originalProperty } = window
-  
-    beforeAll(() => {
-      assertReadonlyGlobalsNotMutable(property)
-      delete window[property]
-  
+ export const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
+  const { [property]: originalProperty } = window
+  const isWindowLocation = property === 'location'
+
+  const origLocation = window.document.location.href
+
+  let parser = null
+  let descriptors = null
+  let location = ''
+
+  if (isWindowLocation) {
+    location = origLocation
+  }
+
+  beforeAll(() => {
+    assertReadonlyGlobalsNotMutable(property)
+    delete window[property]
+
+    if (isWindowLocation) {
+      /*! attribution */
+      /* @CHECK: https://github.com/jestjs/jest/issues/890#issuecomment-347580414 */
+      parser = window.document.createElement('a')
+      descriptors = Object.getOwnPropertyDescriptors(originalProperty)
+
+      window.location = {
+        assign: jest.fn((url) => {
+          location = url
+          descriptors.assign.value.call(originalProperty, url)
+        }),
+        reload: jest.fn((forcedReload = false) => {
+          window.dispatchEvent(new Event('beforeunload', { cancelable: true }));
+          if (forcedReload) {
+            descriptors.reload.value.call(originalProperty, forcedReload)
+          } else {
+            descriptors.reload.value.call(originalProperty)
+          }
+        }),
+        replace: jest.fn((url) => {
+          location = url
+          descriptors.replace.value.call(originalProperty, url)
+        }),
+        toString () {
+          return location
+        }
+      };
+
+      ['href', 'protocol', 'host', 'hostname', 'origin', 'port', 'pathname', 'search', 'hash'].forEach(prop => {
+        Object.defineProperty(window.location, prop, {
+          get: function () {
+            parser.href = location
+
+            if (prop === 'href') {
+              return (parser[prop]).replace(/\/$/, '')
+            }
+            return parser[prop]
+          },
+          set: function (value) {
+            let currentURL = new window.URL(location)
+
+            if (prop === 'href') {
+              location = value.indexOf('http') === 0
+                ? value
+                : `${currentURL.origin}${value.indexOf('/') === 0 ? value : '/' + value}`
+              currentURL = null
+              descriptors.href.set.call(originalProperty, value)
+              return;
+            }
+
+            if (prop === 'origin') {
+              throw new window.TypeError('Cannot redefine property: origin')
+            }
+            
+            currentURL[prop] = value
+            location = currentURL.toString()
+            currentURL = null
+
+            if (prop === 'hash') {
+              descriptors.hash.set.call(originalProperty, value)
+            }
+          }
+        })
+      })
+    } else {
+      let clone = null
+
+      if (typeof originalProperty === 'object' &&
+        ['localStorage', 'sessionStorage'].includes(property)) {
+        clone = Object.create(Object.getPrototypeOf(originalProperty))
+        const descriptors = Object.getOwnPropertyDescriptors(originalProperty)
+        Object.defineProperties(clone, descriptors)
+      }
+
       Object.defineProperty(window, property, {
         configurable: true,
         writable: true,
-        value: fakeOrMock
+        value: clone || fakeOrMock
       })
-    })
-  
-    afterAll(() => {
-      if (originalProperty) {
-        window[property] = originalProperty
+    }
+  })
+
+  afterEach(() => {
+    if (isWindowLocation) {
+      location = origLocation
+    } else {
+      if (fakeOrMock &&
+        ('mockClear' in fakeOrMock) &&
+          typeof fakeOrMock.mockClear === 'function') {
+        fakeOrMock.mockClear()
       }
-    })
+    }
+  })
+
+  afterAll(() => {
+    if (originalProperty) {
+      if (!isWindowLocation) {
+        window[property] = originalProperty
+      } else {
+        if (parser !== null) {
+          parser = null
+        }
+        if (descriptors !== null) {
+          descriptors = null
+        }
+      }
+    }
+  })
 }
 
 /**

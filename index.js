@@ -112,6 +112,7 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
           return location
         }
       };
+
       ['href', 'protocol', 'host', 'hostname', 'origin', 'port', 'pathname', 'search', 'hash'].forEach(prop => {
         Object.defineProperty(window.location, prop, {
           get: function () {
@@ -131,17 +132,20 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
                 : `${currentURL.origin}${value.indexOf('/') === 0 ? value : '/' + value}`
               currentURL = null
               descriptors.href.set.call(originalProperty, value)
-              return
+              return;
             }
 
             if (prop === 'origin') {
               throw new window.TypeError('Cannot redefine property: origin')
             }
-
+            
             currentURL[prop] = value
             location = currentURL.toString()
             currentURL = null
-            // descriptors[prop].set.call(originalProperty, value)
+
+            if (prop === 'hash') {
+              descriptors.hash.set.call(originalProperty, value)
+            }
           }
         })
       })

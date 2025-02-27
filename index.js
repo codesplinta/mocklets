@@ -436,10 +436,11 @@ export const provisionFakeBrowserURILocationForTests_withAddons = () => {
       }
 
       const [protocol, hostname] = newOrigin.trim().split('//')
-      const [, port] = hostname.match(/\:([\d]{4})$/, '$1') || [null, ''];
+      const [, port] = (hostname || '').match(/\:([\d]{4})$/, '$1') || [null, ''];
 
       window.location.protocol = protocol || 'http:'
-      window.location.hostname = hostname.replace(/\:([\d]{4})$/, '')
+      window.location.hostname = (hostname || 'localhost').replace(/\:([\d]{4})$/, '')
+      window.location.host = (hostname || `localhost${(port === '' ? port : ':'+port)}`)
       window.location.port = port
     }
   }

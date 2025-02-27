@@ -39,7 +39,7 @@ describe('Tests for NextJS useRouter', () => {
   });
   
   it('should assert that `useRouter` can be initialized and push an entry in and out of the fake history while updating window object', () => {
-    $setWindowOrigin_forThisTestCase("https://localhost:3000");
+    $setWindowOrigin_forThisTestCase("http://localhost:3000");
     const router = initializeRouterState({ pathname = "/home" });
     //router.push("/about");
     
@@ -54,7 +54,7 @@ describe('Tests for NextJS useRouter', () => {
   })
 
   it('should assert that `useRouter` can be initialized and fire the `beforePopState(...)` callback', () => {
-    $setWindowOrigin_forThisTestCase("https://localhost:3000")
+    $setWindowOrigin_forThisTestCase("http://localhost:3000")
     const router = initializeRouterState({ pathname = "/home" });
     //const routerCallback = jest.fn(() => undefined);
     //const browserCallback = jest.fn(() => undefined);
@@ -70,13 +70,14 @@ describe('Tests for NextJS useRouter', () => {
   })
 
   it('should assert that `useRouter` can be intialized and fire "routeChangeStart" event properly', () => {
-    $setWindowOrigin_forThisTestCase("https://localhost:3000")
+    $setWindowOrigin_forThisTestCase("http://localhost:3000")
     const router = initializeRouterState({ pathname = "/home" });
     //const routerCallback = jest.fn(() => undefined);
 
     //router.events.on('routeChangeStart', routerCallback);
     //router.push("/about")
 
-    //expect()
+    //expect(routerCallback).toHaveBeenCalled()
+    //expect(routerCallback).toHaveBeenCalledTimes(1)
   });
 })

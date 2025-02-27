@@ -434,7 +434,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     _beforePopStateCallback(routePathHistoryEntry)
 
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
 
     window.history.forward();
 
@@ -455,7 +455,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     _beforePopStateCallback(routePathHistoryEntry)
 
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
 
     window.history.back();
 

@@ -398,13 +398,14 @@ export const nextJSuseRouter = (eventsMap = {}) => {
           routingHistoryList.push(
             routingHistoryEntry
           )
+          window.history.pushState(null, "", routingHistoryEntry.url.pathname);
           break
         default:
           if (action === 'replace') {
             routingHistoryList.replaceTop(
               routingHistoryEntry
             )
-            routingHistoryListShiftBuffer = new BasicStack([])
+            window.history.replaceState(null, "", routingHistoryEntry.url.pathname);
           }
       }
 
@@ -437,9 +438,11 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     window.history.forward();
 
-    window.location.pathname = routePathHistoryEntry.url.pathname
-    window.location.search = routePathHistoryEntry.url.search
-    window.location.hash = routePathHistoryEntry.url.hash
+    try {
+      window.location.pathname = routePathHistoryEntry.url.pathname
+      window.location.search = routePathHistoryEntry.url.search
+      window.location.hash = routePathHistoryEntry.url.hash
+    } catch {}
 
     routingHistoryList.push(routePathHistoryEntry)
   })
@@ -458,9 +461,11 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     const topRoutePathHistoryEntry = routingHistoryList.peek()
 
-    window.location.pathname = topRoutePathHistoryEntry.url.pathname
-    window.location.search = topRoutePathHistoryEntry.url.search
-    window.location.hash = topRoutePathHistoryEntry.url.hash
+    try {
+      window.location.pathname = topRoutePathHistoryEntry.url.pathname
+      window.location.search = topRoutePathHistoryEntry.url.search
+      window.location.hash = topRoutePathHistoryEntry.url.hash
+    } catch {}
 
     routingHistoryListShiftBuffer.push(routePathHistoryEntry)
   })

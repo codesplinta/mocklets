@@ -41,43 +41,43 @@ describe('Tests for NextJS useRouter', () => {
   it('should assert that `useRouter` can be initialized and push an entry in and out of the fake history while updating window object', () => {
     $setWindowOrigin_forThisTestCase("http://localhost:3000");
     const router = initializeRouterState({ pathname = "/home" });
-    //router.push("/about");
+    router.push("/about");
     
-    //expect(window.location.pathname).toBe("/about")
-    //expect(router.pathname).toBe("/about")
+    expect(window.location.pathname).toBe("/about")
+    expect(router.pathname).toBe("/about")
   
-    //router.back();
+    router.back();
 
     
-    //expect(window.location.pathname).toBe("/home")
-    //expect(router.pathname).toBe("/home")
+    expect(window.location.pathname).toBe("/home")
+    expect(router.pathname).toBe("/home")
   })
 
   it('should assert that `useRouter` can be initialized and fire the `beforePopState(...)` callback', () => {
     $setWindowOrigin_forThisTestCase("http://localhost:3000")
     const router = initializeRouterState({ pathname = "/home" });
-    //const routerCallback = jest.fn(() => undefined);
-    //const browserCallback = jest.fn(() => undefined);
+    const routerCallback = jest.fn(() => undefined);
+    const browserCallback = jest.fn(() => undefined);
     
-    //router.beforePopState(routerCallback);
-    //window.addEventListener('popstate', browserCallback, false);
-    //router.back();
+    router.beforePopState(routerCallback);
+    window.addEventListener('popstate', browserCallback, false);
+    router.back();
 
-    //expect(browserCallback).toHaveBeenCalled()
-    //expect(browserCallback).toHaveBeenCalledTimes(1)
-    //expect(routerCallback).toHaveBeenCalled()
-    //expect(routerCallback).toHaveBeenCalledTimes(1)
+    expect(browserCallback).toHaveBeenCalled()
+    expect(browserCallback).toHaveBeenCalledTimes(1)
+    expect(routerCallback).toHaveBeenCalled()
+    expect(routerCallback).toHaveBeenCalledTimes(1)
   })
 
   it('should assert that `useRouter` can be intialized and fire "routeChangeStart" event properly', () => {
     $setWindowOrigin_forThisTestCase("http://localhost:3000")
     const router = initializeRouterState({ pathname = "/home" });
-    //const routerCallback = jest.fn(() => undefined);
+    const routerCallback = jest.fn(() => undefined);
 
-    //router.events.on('routeChangeStart', routerCallback);
-    //router.push("/about")
+    router.events.on('routeChangeStart', routerCallback);
+    router.push("/about")
 
-    //expect(routerCallback).toHaveBeenCalled()
-    //expect(routerCallback).toHaveBeenCalledTimes(1)
+    expect(routerCallback).toHaveBeenCalled()
+    expect(routerCallback).toHaveBeenCalledTimes(1)
   });
 })

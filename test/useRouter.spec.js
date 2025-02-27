@@ -67,6 +67,8 @@ describe('Tests for NextJS useRouter', () => {
     expect(browserCallback).toHaveBeenCalledTimes(1)
     expect(routerCallback).toHaveBeenCalled()
     expect(routerCallback).toHaveBeenCalledTimes(1)
+
+    window.removeEventListener('popstate', browserCallback, false);
   })
 
   it('should assert that `useRouter` can be intialized and fire "routeChangeStart" event properly', () => {

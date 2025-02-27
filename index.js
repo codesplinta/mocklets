@@ -435,11 +435,12 @@ export const provisionFakeBrowserURILocationForTests_withAddons = () => {
         return
       }
 
-      // jsdom.changeURL(window, newOrigin)
       const [protocol, hostname] = newOrigin.trim().split('//')
+      const [, port] = hostname.match(/\:([\d]{4})$/, '$1') || [null, ''];
 
       window.location.protocol = protocol || 'http:'
-      window.location.hostname = hostname
+      window.location.hostname = hostname.replace(/\:([\d]{4})$/, '')
+      window.location.port = port
     }
   }
 }

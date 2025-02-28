@@ -150,6 +150,7 @@
       if (!isWindowLocation) {
         window[property] = originalProperty
       } else {
+        location = ''
         if (parser !== null) {
           parser = null
         }

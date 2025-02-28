@@ -398,14 +398,14 @@ export const nextJSuseRouter = (eventsMap = {}) => {
           routingHistoryList.push(
             routingHistoryEntry
           )
-          window.history.pushState(null, "", routingHistoryEntry.url.pathname);
+          window.history.pushState(null, "", routingHistoryEntry.asPath);
           break
         default:
           if (action === 'replace') {
             routingHistoryList.replaceTop(
               routingHistoryEntry
             )
-            window.history.replaceState(null, "", routingHistoryEntry.url.pathname);
+            window.history.replaceState(null, "", routingHistoryEntry.asPath);
           }
       }
 
@@ -432,10 +432,16 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     const routePathHistoryEntry = routingHistoryListShiftBuffer.pull()
 
-    _beforePopStateCallback(routePathHistoryEntry)
+    _beforePopStateCallback({
+      url: routePathHistoryEntry.url,
+      as: routePathHistoryEntry.asPath,
+      options: routePathHistoryEntry.options
+    })
 
+    /* @NOTE: JSDOM doesn't work properly to fire the 'popstate' event when `winndow.history.forward()` is call as per the spec */
+    /* @CHEK: https://github.com/jsdom/jsdom/issues/1565 */
+    /* @CHECK: https://developer.mozilla.org/en-US/docs/Web/API/History_API#examples */
     window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
-
     window.history.forward();
 
     try {
@@ -453,10 +459,16 @@ export const nextJSuseRouter = (eventsMap = {}) => {
 
     const routePathHistoryEntry = routingHistoryList.pop()
 
-    _beforePopStateCallback(routePathHistoryEntry)
+    _beforePopStateCallback({
+      url: routePathHistoryEntry.url,
+      as: routePathHistoryEntry.asPath,
+      options: routePathHistoryEntry.options
+    })
 
+    /* @NOTE: JSDOM doesn't work properly to fire the 'popstate' event when `winndow.history.back()` is call as per the spec */
+    /* @CHEK: https://github.com/jsdom/jsdom/issues/1565 */
+    /* @CHECK: https://developer.mozilla.org/en-US/docs/Web/API/History_API#examples */
     window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
-
     window.history.back();
 
     const topRoutePathHistoryEntry = routingHistoryList.peek()

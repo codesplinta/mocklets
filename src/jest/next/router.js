@@ -562,6 +562,8 @@ export const nextJSuseRouter = (eventsMap = {}) => {
         window.location.pathname = pathname
       } catch {}
 
+      _hash = ''
+      _beforePopStateCallback = () => false
       routingHistoryList = new Stack([])
       routingHistoryListShiftBuffer = new BasicStack([])
 

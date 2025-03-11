@@ -1,95 +1,146 @@
-import {
-  provisionFakeBrowserURILocationForTests_withAddons
-} from '../index'
-import { provisionFakeWebPageWindowObject } from './.helpers/utils'
-import { fakeNextJSRouterPackageFactory } from '../src/jest/next/router'
+import { provisionFakeBrowserURILocationForTests_withAddons } from "../index";
+import { provisionFakeWebPageWindowObject } from "./.helpers/utils";
+import { fakeNextJSRouterPackageFactory } from "../src/jest/next/router";
 /* eslint-env jest */
 
-const { $setWindowOrigin_forThisTestCase } = provisionFakeBrowserURILocationForTests_withAddons()
+const {
+  $setWindowOrigin_forThisTestCase,
+} = provisionFakeBrowserURILocationForTests_withAddons();
 
-describe('Tests for NextJS `useRouter`', () => {
-  provisionFakeWebPageWindowObject(
-    'location'
-  )
+describe("Tests for NextJS `useRouter`", () => {
+  provisionFakeWebPageWindowObject("location");
 
-  let useRouteEventsMap = {}
+  let useRouteEventsMap = {};
   let routerFactory = () => ({});
 
-  const initializeRouterState = ({ query = {}, pathname = "/", isPreview = false }) => {
-    const $router = (routerFactory().useRouter())
+  const initializeRouterState = ({
+    query = {},
+    pathname = "/",
+    isPreview = false,
+  }) => {
+    const $router = routerFactory().useRouter();
 
-    $router.query = query
-    $router.asPath = pathname
-    $router.isPreview = isPreview
+    $router.query = query;
+    $router.asPath = pathname;
+    $router.isPreview = isPreview;
 
     return $router;
   };
 
   beforeAll(() => {
-    routerFactory = fakeNextJSRouterPackageFactory(
-      useRouteEventsMap
-    )
+    routerFactory = fakeNextJSRouterPackageFactory(useRouteEventsMap);
   });
 
   afterEach(() => {
-    useRouteEventsMap = {}
-    routerFactory = fakeNextJSRouterPackageFactory(
-      useRouteEventsMap
-    )
+    useRouteEventsMap = {};
+    routerFactory = fakeNextJSRouterPackageFactory(useRouteEventsMap);
   });
-  
-  it('should assert that `useRouter` can be initialized and push an entry in and out of the fake history while updating window object', () => {
+
+  it("should assert that `useRouter` can be initialized and push an entry in and out of the fake history while updating window object", () => {
+    console.log("HIya");
     $setWindowOrigin_forThisTestCase("http://localhost:3300");
-    const router = initializeRouterState({ pathname = "/home" });
+    const router = initializeRouterState({ pathname: "/home" });
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */
     router.push("/about");
-    
-    expect(window.location.pathname).toBe("/about")
-    expect(router.pathname).toBe("/about")
+
+    expect(window.location.pathname).toBe("/about");
+    expect(router.pathname).toBe("/about");
 
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerback */
     router.back();
 
-    
-    expect(window.location.pathname).toBe("/home")
-    expect(router.pathname).toBe("/home")
-  })
+    expect(window.location.pathname).toBe("/home");
+    expect(router.pathname).toBe("/home");
+  });
 
-  it('should assert that `useRouter` can be initialized and fire the `beforePopState(...)` callback properly', () => {
-    $setWindowOrigin_forThisTestCase("http://localhost:3300")
-    const router = initializeRouterState({ pathname = "/home" });
+  it("should assert that `useRouter` can be initialized and fire the `beforePopState(...)` callback properly", () => {
+    $setWindowOrigin_forThisTestCase("http://localhost:3300");
+    const router = initializeRouterState({ pathname: "/home" });
     const routerCallback = jest.fn(() => undefined);
     const browserCallback = jest.fn(() => undefined);
 
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerbeforepopstate */
     router.beforePopState(routerCallback);
-    window.addEventListener('popstate', browserCallback, false);
+    window.addEventListener("popstate", browserCallback, false);
 
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */
     router.push("/contact/new");
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerback */
     router.back();
 
-    expect(browserCallback).toHaveBeenCalled()
-    expect(browserCallback).toHaveBeenCalledTimes(1)
-    expect(routerCallback).toHaveBeenCalled()
-    expect(routerCallback).toHaveBeenCalledTimes(1)
+    expect(browserCallback).toHaveBeenCalled();
+    expect(browserCallback).toHaveBeenCalledTimes(1);
+    expect(routerCallback).toHaveBeenCalled();
+    expect(routerCallback).toHaveBeenCalledTimes(1);
 
-    window.removeEventListener('popstate', browserCallback, false);
-  })
+    window.removeEventListener("popstate", browserCallback, false);
+  });
 
   it('should assert that `useRouter` can be intialized and fire "routeChangeStart" event properly', () => {
-    $setWindowOrigin_forThisTestCase("http://localhost:3300")
-    const router = initializeRouterState({ pathname = "/home" });
+    $setWindowOrigin_forThisTestCase("http://localhost:3300");
+    const router = initializeRouterState({ pathname: "/home" });
     const routerCallback = jest.fn(() => undefined);
 
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerevents */
-    router.events.on('routeChangeStart', routerCallback);
-    
-    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */
-    router.push("/about")
+    router.events.on("routeChangeStart", routerCallback);
 
-    expect(routerCallback).toHaveBeenCalled()
-    expect(routerCallback).toHaveBeenCalledTimes(1)
+    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */
+    router.push("/about");
+
+    expect(routerCallback).toHaveBeenCalled();
+    expect(routerCallback).toHaveBeenCalledTimes(1);
+
+    expect(router.pathname).toBe("/about");
   });
-})
+
+  it('should assert that `useRouter` can be intialized and fire "routeChangeComplete" event properly', () => {
+    $setWindowOrigin_forThisTestCase("http://localhost:3300");
+    const router = initializeRouterState({ pathname: "/home" });
+    const routerCallback = jest.fn(() => undefined);
+
+    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerevents */
+    router.events.on("routeChangeComplete", routerCallback);
+
+    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */
+    router.push("/about");
+
+    expect(routerCallback).toHaveBeenCalled();
+    expect(routerCallback).toHaveBeenCalledTimes(1);
+
+    expect(router.pathname).toBe("/about");
+  });
+
+  it('should assert that `useRouter` can be initialized and fire "routeChangeError" event properly', () => {
+    $setWindowOrigin_forThisTestCase("http://localhost:3300");
+    const router = initializeRouterState({ pathname: "/home" });
+    const routerCallback = jest.fn(() => undefined);
+
+    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerevents */
+    router.events.on("routeChangeError", routerCallback);
+
+    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */
+    router.push("/invalid-route");
+
+    expect(routerCallback).toHaveBeenCalled();
+    expect(routerCallback).toHaveBeenCalledTimes(1);
+
+    expect(router.pathname).toBe("/invalid-route");
+  });
+
+  it('should assert that `useRouter` can be initialized and fire "beforeHistoryChange" event properly', () => {
+    $setWindowOrigin_forThisTestCase("http://localhost:3300");
+    const router = initializeRouterState({ pathname: "/home" });
+    const routerCallback = jest.fn(() => undefined);
+
+    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerevents */
+    router.events.on("beforeHistoryChange", routerCallback);
+
+    /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */
+    router.push("/about");
+
+    expect(routerCallback).toHaveBeenCalled();
+    expect(routerCallback).toHaveBeenCalledTimes(1);
+
+    expect(router.pathname).toBe("/about");
+  });
+});

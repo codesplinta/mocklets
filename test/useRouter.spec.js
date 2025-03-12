@@ -37,7 +37,6 @@ describe("Tests for NextJS `useRouter`", () => {
   });
 
   it("should assert that `useRouter` can be initialized and push an entry in and out of the fake history while updating window object", () => {
-    console.log("HIya");
     $setWindowOrigin_forThisTestCase("http://localhost:3300");
     const router = initializeRouterState({ pathname: "/home" });
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */

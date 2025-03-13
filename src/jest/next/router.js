@@ -173,15 +173,15 @@ export const nextJSuseRouter = (eventsMap = {}) => {
   })
   const mockRouterReload = jest.fn(() => {
     if (typeof window !== 'undefined') {
-        window.setTimeout(() => {
-          try {
-            window.location.reload()
-          } catch {
-            window.dispatchEvent(
-              new Event('beforeunload', { cancelable: true })
-            );
-          }
-        }, 0)
+      window.setTimeout(() => {
+        try {
+          window.location.reload()
+        } catch {
+          window.dispatchEvent(
+            new window.Event('beforeunload', { cancelable: true })
+          )
+        }
+      }, 0)
     }
     return Promise.resolve(true)
   })
@@ -295,8 +295,8 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     }
 
     try {
-      window.location.pathname = url.pathname;
-      window.location.search = queryString;
+      window.location.pathname = url.pathname
+      window.location.search = queryString
       window.location.hash = url.hash
     } catch {}
 
@@ -331,7 +331,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     const previousRoute = {
       query: routerFields.query,
       hash: _hash,
-      pathname: routerFields.pathname
+      pathname: action === 'initial' ? url : window.location.pathname
     }
 
     let $asPath = asPath || ''
@@ -345,7 +345,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
        */
       const $url = new URL(
         url,
-        window.location.origin || 'https://test.com'
+        window.location.origin
       )
 
       normalizedRoute = normalizeAsRouteFromUrl(
@@ -375,54 +375,66 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     $asPath = normalizedRoute.asPath
 
     if (shouldTriggerHashChangeEvent) {
-      routerFields.events.emit('hashChangeStart', $asPath, { shallow })
+      try {
+        routerFields.events.emit('hashChangeStart', $asPath, { shallow })
+      } catch ($e) {
+        routerFields.events.emit('routeChangeError', $e, $asPath, { shallow })
+      }
     } else {
-      routerFields.events.emit('routeChangeStart', $asPath, { shallow })
+      try {
+        routerFields.events.emit('routeChangeStart', $asPath, { shallow })
+      } catch (_e) {
+        routerFields.events.emit('routeChangeError', _e, $asPath, { shallow })
+      }
     }
 
-    const returnValue = await new Promise((resolve) => setTimeout(() => {
-      const routingHistoryEntry = {
-        url: typeof url === 'string'
-          ? Object.assign(
-              {},
-              { query: normalizedRoute.query },
-              (new URL(url, window.location.origin || 'https://test.com'))
-            )
-          : url,
-        asPath: $asPath,
-        options: { shallow, scroll, locale }
-      }
+    const routingHistoryEntry = {
+      url: typeof url === 'string'
+        ? Object.assign(
+            {},
+            {
+              origin: window.location.origin,
+              pathname: normalizedRoute.pathname,
+              query: normalizedRoute.query,
+              protocol: window.location.protocol,
+              host: window.location.host,
+              hostname: window.location.hostname,
+              href: window.location.href
+            }
+          )
+        : url,
+      asPath: $asPath,
+      options: { shallow, scroll, locale }
+    }
 
-      switch (action) {
-        case 'push':
-          routingHistoryList.push(
+    switch (action) {
+      case 'initial':
+      case 'push':
+        routingHistoryList.push(
+          routingHistoryEntry
+        )
+        routerFields.events.emit('beforeHistoryChange', $asPath, { shallow })
+        window.history.pushState(null, '', routingHistoryEntry.asPath)
+        break
+      default:
+        if (action === 'replace') {
+          routingHistoryList.replaceTop(
             routingHistoryEntry
           )
-          window.history.pushState(null, "", routingHistoryEntry.asPath);
-          break
-        default:
-          if (action === 'replace') {
-            routingHistoryList.replaceTop(
-              routingHistoryEntry
-            )
-            window.history.replaceState(null, "", routingHistoryEntry.asPath);
-          }
-      }
+          routerFields.events.emit('beforeHistoryChange', $asPath, { shallow })
+          window.history.replaceState(null, '', routingHistoryEntry.asPath)
+        }
+    }
 
-      /* @HINT: Update to current route fields */
-      _query = normalizedRoute.query
-      _hash = normalizedRoute.hash
-
-      resolve(true)
-    }, 100))
+    /* @HINT: Update to current route fields */
+    _query = normalizedRoute.query
+    _hash = normalizedRoute.hash
 
     if (shouldTriggerHashChangeEvent) {
       routerFields.events.emit('hashChangeComplete', $asPath, { shallow })
     } else {
       routerFields.events.emit('routeChangeComplete', $asPath, { shallow })
     }
-
-    return returnValue
   }
 
   const mockRouterForward = jest.fn(() => {
@@ -441,8 +453,8 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     /* @NOTE: JSDOM doesn't work properly to fire the 'popstate' event when `winndow.history.forward()` is call as per the spec */
     /* @CHEK: https://github.com/jsdom/jsdom/issues/1565 */
     /* @CHECK: https://developer.mozilla.org/en-US/docs/Web/API/History_API#examples */
-    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
-    window.history.forward();
+    window.dispatchEvent(new window.PopStateEvent('popstate', { state: null }))
+    window.history.forward()
 
     try {
       window.location.pathname = routePathHistoryEntry.url.pathname
@@ -468,8 +480,8 @@ export const nextJSuseRouter = (eventsMap = {}) => {
     /* @NOTE: JSDOM doesn't work properly to fire the 'popstate' event when `winndow.history.back()` is call as per the spec */
     /* @CHEK: https://github.com/jsdom/jsdom/issues/1565 */
     /* @CHECK: https://developer.mozilla.org/en-US/docs/Web/API/History_API#examples */
-    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
-    window.history.back();
+    window.dispatchEvent(new window.PopStateEvent('popstate', { state: null }))
+    window.history.back()
 
     const topRoutePathHistoryEntry = routingHistoryList.peek()
 
@@ -488,7 +500,7 @@ export const nextJSuseRouter = (eventsMap = {}) => {
         const currentSearch = window.location.search
         const currentHash = window.location.hash
 
-        const TYPE_BACK_FORWARD = 2;
+        const TYPE_BACK_FORWARD = 2
 
         let historyStack = routingHistoryList.clone()
 
@@ -509,9 +521,9 @@ export const nextJSuseRouter = (eventsMap = {}) => {
           if (currentPathname === topRoutingPathHistoryEntry.url.pathname ||
               currentSearch === topRoutingPathHistoryEntry.url.search ||
                 currentHash === topRoutingPathHistoryEntry.url.hash) {
-            window.performace.navigation.type = TYPE_BACK_FORWARD;
+            window.performace.navigation.type = TYPE_BACK_FORWARD
           } else {
-            window.performace.navigation.type = TYPE_BACK_FORWARD;
+            window.performace.navigation.type = TYPE_BACK_FORWARD
           }
         } catch {}
       }))
@@ -525,10 +537,10 @@ export const nextJSuseRouter = (eventsMap = {}) => {
       return _query
     },
     set query (query = {}) {
-      _query = JSON.parse(JSON.stringify(query));
-      const { queryString } = stringifyFromQueryObjects(_query);
+      _query = JSON.parse(JSON.stringify(query))
+      const { queryString } = stringifyFromQueryObjects(_query)
       try {
-        window.location.search = queryString;
+        window.location.search = queryString
       } catch {}
     },
     basePath: '',
@@ -555,22 +567,21 @@ export const nextJSuseRouter = (eventsMap = {}) => {
       return routingHistoryList.peek().asPath
     },
     set asPath (pathname) {
-      const $query = this.query
       const $locale = this.locale
-
-      try {
-        window.location.pathname = pathname
-      } catch {}
 
       _hash = ''
       _beforePopStateCallback = () => false
       routingHistoryList = new Stack([])
       routingHistoryListShiftBuffer = new BasicStack([])
 
+      try {
+        window.location.pathname = pathname
+      } catch {}
+
       updatePath(
-        { pathname, query: $query },
+        pathname,
         { locale: $locale },
-        'push'
+        'initial'
       )
     },
     locale: 'en-US',

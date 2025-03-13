@@ -62,7 +62,9 @@
       "beforeAll",
       "afterAll",
       "beforeEach",
-      "afterEach"
+      "afterEach",
+      "Event",
+      "PopStateEvent"
     ],
     "ignore": [
       "/examples",
@@ -96,8 +98,7 @@
     ],
     "moduleNameMapper": {
       "@mocklets/jest": "<rootDir>/packages/src/jest/index.js",
-      "@mocklets/vitest": "<rootDir>/packages/src/vitest/index.js",
-      "(.+)\\.js": "$1"
+      "@mocklets/vitest": "<rootDir>/packages/src/vitest/index.js"
     },
     "coverageThreshold": {
       "global": {

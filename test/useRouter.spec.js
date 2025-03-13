@@ -88,6 +88,7 @@ describe("Tests for NextJS `useRouter`", () => {
 
     expect(routerCallback).toHaveBeenCalled();
     expect(routerCallback).toHaveBeenCalledTimes(1);
+    expect(routerCallback).toHaveBeenCalledWith("/about", { shallow: false })
 
     expect(router.pathname).toBe("/about");
   });
@@ -105,6 +106,7 @@ describe("Tests for NextJS `useRouter`", () => {
 
     expect(routerCallback).toHaveBeenCalled();
     expect(routerCallback).toHaveBeenCalledTimes(1);
+    expect(routerCallback).toHaveBeenCalledWith("/about", { shallow: false })
 
     expect(router.pathname).toBe("/about");
   });
@@ -113,8 +115,12 @@ describe("Tests for NextJS `useRouter`", () => {
     $setWindowOrigin_forThisTestCase("http://localhost:3300");
     const router = initializeRouterState({ pathname: "/home" });
     const routerCallback = jest.fn(() => undefined);
+    const routerCallbackThrowingError = () => {
+      throw new Error("cancel route loading...")
+    };
 
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerevents */
+    router.events.on("routeChangeStart", routerCallbackThrowingError)
     router.events.on("routeChangeError", routerCallback);
 
     /* @HINT+reference: https://nextjs.org/docs/pages/api-reference/functions/use-router#routerpush */

@@ -97,7 +97,7 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
           descriptors.assign.value.call(originalProperty, url)
         }),
         reload: jest.fn((forcedReload = false) => {
-          window.dispatchEvent(new Event('beforeunload', { cancelable: true }));
+          window.dispatchEvent(new window.Event('beforeunload', { cancelable: true }))
           if (forcedReload) {
             descriptors.reload.value.call(originalProperty, forcedReload)
           } else {
@@ -132,13 +132,13 @@ const provisionFakeWebPageWindowObject = (property, fakeOrMock = null) => {
                 : `${currentURL.origin}${value.indexOf('/') === 0 ? value : '/' + value}`
               currentURL = null
               descriptors.href.set.call(originalProperty, value)
-              return;
+              return
             }
 
             if (prop === 'origin') {
               throw new window.TypeError('Cannot redefine property: origin')
             }
-            
+
             currentURL[prop] = value
             location = currentURL.toString()
             currentURL = null
@@ -430,20 +430,21 @@ export const provisionFakeBrowserURILocationForTests_withAddons = () => {
   )
 
   return {
-    /* eslint-disable-next-line */
+    /* eslint-disable */
     $setWindowOrigin_forThisTestCase (newOrigin) {
       if (typeof newOrigin !== 'string') {
         return
       }
 
       const [protocol, hostname] = newOrigin.trim().split('//')
-      const [, port] = (hostname || '').match(/\:([\d]{4})$/, '$1') || [null, ''];
+      const [, port] = (hostname || '').match(/\:([\d]{4})$/, '$1') || [null, '']
 
       window.location.protocol = protocol || 'http:'
       window.location.hostname = (hostname || 'localhost').replace(/\:([\d]{4})$/, '')
-      window.location.host = (hostname || `localhost${(port === '' ? port : ':'+port)}`)
+      window.location.host = (hostname || `localhost${(port === '' ? port : ':' + port)}`)
       window.location.port = port
     }
+    /* eslint-enable */
   }
 }
 

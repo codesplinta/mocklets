@@ -438,10 +438,11 @@ export const provisionFakeBrowserURILocationForTests_withAddons = () => {
 
       const [protocol, hostname] = newOrigin.trim().split('//')
       const [, port] = (hostname || '').match(/\:([\d]{4})$/, '$1') || [null, '']
+      const $hostname = (hostname || '').replace(/\/$/, "");
 
       window.location.protocol = protocol || 'http:'
-      window.location.hostname = (hostname || 'localhost').replace(/\:([\d]{4})$/, '')
-      window.location.host = (hostname || `localhost${(port === '' ? port : ':' + port)}`)
+      window.location.hostname = ($hostname || 'localhost').replace(/\:([\d]{4})$/, '')
+      window.location.host = ($hostname || `localhost${(port === '' ? port : ':' + port)}`)
       window.location.port = port
     }
     /* eslint-enable */

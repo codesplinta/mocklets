@@ -525,7 +525,7 @@ describe('Tests for isLocalHost() function', () => {
   });
 
   it('should return `true` if page host is localhost', () => {
-    $setWindowOrigin_forThisTestCase('http://localhost')
+    $setWindowOrigin_forThisTestCase('http://localhost:3100')
 
     expect(isLocalHost()).toBe(true)
   })
@@ -684,6 +684,7 @@ import { NextRouter } from 'next/router';
 import {
   provisionMockedNextJSRouterForTests_withAddons,
   provisionEnvironmentalVariablesForTests_withAddons,
+  provisionFakeBrowserURILocationForTests_withAddons,
   $EXECUTION
 } from 'mocklets';
 
@@ -699,8 +700,17 @@ jest.mock('next/router', () => ({
   ...jest.requireActual('next/router')
 }))
 
+
+
 describe('Test article page for my blog', () => {
-  
+  /* @HINT:
+   *
+   * Setup the `origin` property on
+   * `window.location`
+   */
+  const {
+    $setWindowOrigin_forThisTestCase,
+  } = provisionFakeBrowserURILocationForTests_withAddons();
   /* @HINT:
    * 
    * Create a factory for Next.js
@@ -736,6 +746,7 @@ describe('Test article page for my blog', () => {
 
   it('should navigate to edit-article page', async () => {
     /* @NOTE: Arrange */
+    $setWindowOrigin_forThisTestCase(process.env.NEXT_PUBLIC_API_URL)
 
     /* @HINT: Create a Jest fake for Next.js `useRouter()` hook */
     const { push }: NextRouter = $setSpyOn_useRouter_withReturnValueOnce(
@@ -769,6 +780,9 @@ describe('Test article page for my blog', () => {
 
   it('should navigate back to article page', async () => {
     /* @NOTE: Arrange */
+    $setWindowOrigin_forThisTestCase(process.env.NEXT_PUBLIC_API_URL)
+
+    /* @HINT: Create a Jest fake for Next.js `useRouter()` hook */
     const { back }: NextRouter = $setSpyOn_useRouter_withReturnValueOnce(
       {
         query: {

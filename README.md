@@ -719,7 +719,7 @@ describe('Test article page for my blog', () => {
    * that can record imperative calls.
    */
   const { 
-    $setSpyOn_useRouter_withReturnValueOnce
+    $setSpyOn_useRouter_withReturnValueOnce 
   } = provisionMockedNextJSRouterForTests_withAddons();
 
   /* @HINT:

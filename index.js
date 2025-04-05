@@ -541,7 +541,7 @@ export const provisionMockedNextJSRouterForTests = () => {
 /* eslint-disable-next-line */
 export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 1) => {
   let ___eventsSubscribed = {}
-  const routerFactory = fakeNextJSRouterPackageFactory(
+  let routerFactory = fakeNextJSRouterPackageFactory(
     ___eventsSubscribed
   )
 
@@ -556,6 +556,14 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
     if (clearAfterEach) {
       jest.restoreAllMocks()
     }
+    routerFactory = fakeNextJSRouterPackageFactory(
+      ___eventsSubscribed
+    )
+  });
+
+  afterAll(() => {
+    ___eventsSubscribed = null;
+    routerFactory = null;
   })
 
   return {

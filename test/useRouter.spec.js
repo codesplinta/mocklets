@@ -36,6 +36,11 @@ describe("Tests for NextJS `useRouter`", () => {
     routerFactory = fakeNextJSRouterPackageFactory(useRouteEventsMap);
   });
 
+  afterAll(() => {
+    useRouteEventsMap = null;
+    routerFactory = null
+  })
+
   it("should assert that `useRouter` can be initialized and push an entry in and out of the fake history while updating window object", () => {
     $setWindowOrigin_forThisTestCase("http://localhost:3300");
     const router = initializeRouterState({ pathname: "/home" });

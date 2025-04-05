@@ -1,5 +1,5 @@
 <a name="0.2.0"></a>
-# 0.2.0 (2025-03-26)
+# 0.2.0 (2025-04-05)
 
 ### Feature Added
 - Added proper JEST-based fake for `window.print()` while overriding JSDOM implementation.

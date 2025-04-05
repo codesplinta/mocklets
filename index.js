@@ -559,11 +559,11 @@ export const provisionMockedNextJSRouterForTests_withAddons = (clearAfterEach = 
     routerFactory = fakeNextJSRouterPackageFactory(
       ___eventsSubscribed
     )
-  });
+  })
 
   afterAll(() => {
-    ___eventsSubscribed = null;
-    routerFactory = null;
+    ___eventsSubscribed = null
+    routerFactory = null
   })
 
   return {

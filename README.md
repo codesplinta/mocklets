@@ -282,6 +282,8 @@ app.listen(8080, function() {
 >src/controller/downloads/\__tests\__/getFile.spec.js
 ```js
 import { createRequire } from 'module';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import  {
   provisionFakeDateForTests,
   provisionFixturesForTests_withAddons,
@@ -289,6 +291,10 @@ import  {
   provisionMockedJSConsoleLoggingForTests,
   $EXECUTION
 } from 'mocklets'
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function addBodyParserForTests (app) {
   const bodyParser = require('body-parser');
@@ -302,9 +308,9 @@ function addBodyParserForTests (app) {
  * Always remember, #{mocklets} requires the 'fs'
  * module hoisted (as above) !!
  */
-provisionMockedNodeJSFileSystemForTests((mock, path) => {
-  const expressJSPublicFolderPath = path.resolve(
-    path.join(__dirname, '../../../../public')
+provisionMockedNodeJSFileSystemForTests((mock, $path) => {
+  const expressJSPublicFolderPath = $path.resolve(
+    $path.join(__dirname, '../../../../public')
   )
 
   mock({
@@ -317,7 +323,7 @@ provisionMockedNodeJSFileSystemForTests((mock, path) => {
           mtime: new Date(1411609054470) // Wed Sep 24 2014 18:37:34 GMT-0700 (PDT)
         }),
         '.DS_store': mock.file({ mode: 33188, content: '', birthtime: new Date() }),
-        'pixies.png': Buffer.from([8, 6, 7, 5, 3, 0, 9])
+        'pixies.png': Buffer.from([180, 255, 100, 105, 63, 40, 97, 121, 220])
       }
     })
   })
@@ -330,7 +336,7 @@ provisionMockedNodeJSFileSystemForTests((mock, path) => {
  * Since, the 'getFile' module makes use of `res.sendFile()`,
  * It has to be imported after mocking the filesystem (as above)
  */
-const require = createRequire(import.meta.url);
+
 const getFile = require('../../getFile');
 
 describe('Testing `getFile()` ExpressJS app controller action', () => {
@@ -404,7 +410,7 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
       req.next = next;
 
       /* @NOTE: Act - Execute the ExpressJS route handler */
-      getFile(req, res, next)
+      getFile(req, res, next);
 
 
       /* @NOTE: Assert - Validate assertions */
@@ -452,7 +458,7 @@ describe('Testing `getFile()` ExpressJS app controller action', () => {
       req.next = next;
 
       /* @NOTE: Act - Execute the ExpressJS route handler */
-      getFile(req, res, next)
+      getFile(req, res, next);
 
 
       /* @NOTE: Assert - Validate assertions */
